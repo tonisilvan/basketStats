@@ -1,0 +1,21 @@
+type;key;value;num;first;last;nick;height;pos
+meta;teamName;Amigos de Acu 2;;;;;;
+meta;teamSub;Gijón;;;;;;
+meta;logo;../images/logos/Acu2.jpeg;;;;;;
+meta;coach;Marcelino Esmoris;;;;;;
+meta;assistant;Litos;;;;;;
+meta;tournamentTitle;IV Edición del Torneo David Gustavo Acuña;;;;;;
+meta;tournamentLogo;../../images/logos/logo-acu.png;;;;;;
+player;;;11;Alfredo;Díaz del Valle;Fredi;1,95;Ala-Pivot
+player;;;7;Alex;Trabada;Traba;1.9;Alero
+player;;;33;Toni;Silvan;;1,80;Alero
+player;;;11;Ivan;Matilla;Mati;1,70;Base
+player;;;7;Javier;Fernandez;Torri;190;Ala-Pivot
+player;;;Ni idea;Gabriel;Poveda;Poveda;1.94m;Ala-Pivot
+player;;;69;Sergio;Gonzalez;;1,86;Base
+player;;;1;Moisés;Laviana;Mois;1.73;Escolta
+player;;;El que me dejen;Javi;Rodríguez;El primo;2’02;Ala-Pivot
+player;;;9;Javi;Montes;;1,83;Base
+player;;;4;Dani;González;;2,02;Ala-Pivot
+player;;;8;Borja;Mera;;1,85;Base
+player;;;12;Javier;Fernández;Arbeyal;1,92;Ala-Pivot

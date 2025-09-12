@@ -1,0 +1,22 @@
+type;key;value;num;first;last;nick;height;pos
+meta;teamName;Selection FEB;;;;;;
+meta;teamSub;Asturias;;;;;;
+meta;logo;../images/logos/logo-federacion.jpeg;;;;;;
+meta;coach;Emilio;;;;;;
+meta;assistant;-;;;;;;
+meta;tournamentTitle;IV Edición del Torneo David Gustavo Acuña;;;;;;
+meta;tournamentLogo;../../images/logos/logo-acu.png;;;;;;
+player;;;77;Olay;Iglesias;Olay;2 m;Alero
+player;;;13;Hugo;Prieto Rodríguez;Prieto;185;Escolta
+player;;;4;Jose Ramon;Torres Tagarro;Joserra;1,73;Base
+player;;;5;Diego;Sanchez;;1,98;Pivot
+player;;;86;Carlos;Cuesta del campo;;1,80;Base
+player;;;4;Pelayo;Capín Alonso;Capín;1.8;Escolta
+player;;;19;Javier;Segovia;Sego;1,87;Alero
+player;;;;Dani;Oca;;;Alero
+player;;;;Alvaro;Pérez;;;Alero
+player;;;;Ander;Amajoud;;;Base
+player;;;;Iván;Rodríguez;;;Pivot
+player;;;;Pablo;Bravo;;;
+player;;;;Juan;Melendez;;;Base
+player;;;;;;;;

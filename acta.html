@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acta rápida — 2 equipos (live SW)</title>
+<style>
+  :root{
+    --bg:#0b0f14;--panel:#121821;--ink:#e8eef9;--muted:#9bb0c9;--line:#223046;
+    --ok:#10b981;--bad:#ef4444;--chip:#0a0f15;--btn:#15202b;--btn-h:#1b2a3a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14,#0f1620);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:#0d131b}
+  #titleText{font-size:18px;font-weight:800}
+  .toolbar{display:flex;gap:10px;align-items:center}
+  button{cursor:pointer;border:1px solid #2a3a4d;background:var(--btn);color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:600}
+  button:hover{background:var(--btn-h)}
+  .badge{font-size:12px;color:#9fb4d1}
+  .badge.ok{color:#2dd4bf}
+  .badge.err{color:#ef4444}
+  .layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column}
+  .team-header{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
+  .left{display:flex;align-items:center;gap:12px}
+  .tile{width:56px;height:56px;border-radius:12px;background:var(--chip);border:1px dashed #324153;display:grid;place-items:center;position:relative;overflow:hidden}
+  .tile input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .tile img{width:100%;height:100%;object-fit:cover}
+  .tile.glow{box-shadow:0 0 0 2px #2dd4bf,0 0 16px rgba(45,212,191,.45)}
+  .tile.loaded .check{display:inline-block}
+  .check{position:absolute;bottom:4px;right:6px;background:#16a34a;color:white;font-size:11px;padding:2px 6px;border-radius:999px;display:none}
+  .team-title{display:flex;flex-direction:column}
+  .team-title input{background:transparent;border:1px solid #2a3a4d;border-radius:8px;padding:4px 6px;color:var(--ink);font-weight:600;min-width:140px}
+  .score-badge{width:56px;height:56px;border-radius:12px;background:#e5eef9;color:#0b0f14;display:grid;place-items:center;font-weight:900;font-size:22px}
+  .table-wrap{max-height:70vh;overflow:auto}
+  table{width:100%;border-collapse:separate;border-spacing:0}
+  thead th{position:sticky;top:0;background:#0f1620;border-bottom:1px solid var(--line);z-index:10}
+  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums;vertical-align:top}
+  tbody tr:nth-child(2n-1){background:#0f141c}
+  tbody tr:nth-child(2n){background:#131b27}
+  .sticky-name{position:sticky;left:0;background:inherit;z-index:11;text-align:left}
+  .num{width:110px}
+  .smallnote{font-size:11px;color:var(--muted);display:block;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  input.small{width:48px;text-align:center;background:#0d1520;border:1px solid #2a3a4d;border-radius:8px;color:var(--ink);padding:4px 4px}
+  input.small:disabled{opacity:.6}
+  .rowpair{display:flex;gap:8px;align-items:flex-start;justify-content:center}
+  .colstack{display:flex;flex-direction:column;gap:2px;align-items:center}
+  .mini{padding:2px 6px;border-radius:8px;border:1px solid #2a3a4d;background:#0e1620;font-size:12px}
+  .mini.good{background:#0e231a;border-color:#1f8b52}
+  .mini.bad{background:#261313;border-color:#a33c3c}
+  .mini.plus{background:#0f1a27;border-color:#355a8b}
+  .sepL{border-left:1px solid var(--line)}
+  th.sepL{box-shadow: inset 1px 0 0 var(--line)}
+  @media (max-width:1100px){ .layout{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+  <header class="top">
+    <h1 id="title"><span id="titleText">Cargar plantillas (2)</span> <span id="loadedCounter" style="font-size:12px;color:#9fb4d1;margin-left:8px">(0/2)</span></h1>
+    <div class="toolbar">
+      <button id="nuevo">Nuevo partido</button>
+      <span id="autosaveBadge" class="badge">Autoguardado</span>
+    </div>
+  </header>
+
+  <main class="layout" id="layout"></main>
+
+<script>
+// ---- Service Worker (para exponer /live.json y /live.csv)
+if ('serviceWorker' in navigator) {
+  try { navigator.serviceWorker.register('./sw.js', { scope: './' }); } catch(e) { console.warn('SW off', e); }
+}
+function pushToSW({json, csv}){
+  if (!('serviceWorker' in navigator)) return;
+  const msg = { type:'save', json, csv, title: app.matchName||'', updatedAt: Date.now() };
+  const send = () => navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage(msg);
+  if (navigator.serviceWorker.controller) send();
+  else navigator.serviceWorker.ready.then(send);
+}
+function exportJson(){
+  return {
+    title: app.matchName || '',
+    teams: state.teams.map(t => ({
+      name: t.name, coach: t.coach,
+      points: t.players.reduce((s,p)=> s + (p.PTS||0), 0),
+      players: t.players
+    })),
+    updatedAt: Date.now()
+  };
+}
+
+// ---------- Modelo de datos ----------
+const EMPTY_PLAYER = ()=>({num:'',first:'',last:'',_2PA:0,_2PM:0,_3PA:0,_3PM:0,FTA:0,FTM:0,OREB:0,DREB:0,REB:0,AST:0,STL:0,TOV:0,BLK_F:0,BLK_A:0,PF:0,FD:0,FGM:0,FGA:0,PTS:0,VAL:0});
+const makeTeam = (name='Equipo')=>({name,coach:'',logo:'',loaded:false,players:Array.from({length:12}, EMPTY_PLAYER)});
+let state = { teams:[ makeTeam('Equipo 1'), makeTeam('Equipo 2') ] };
+let app = { ready:false, matchName:'', saveTimer:null };
+
+const COLS = [
+  {key:'id',label:'#',type:'id',sticky:true},
+  {key:'T2',label:'T2',title:'Tiros de 2',block:'shoot',a:'_2PA',m:'_2PM'},
+  {key:'T3',label:'T3',title:'Tiros de 3',block:'shoot',a:'_3PA',m:'_3PM', sepL:true},
+  {key:'TL',label:'TL',title:'Tiros libres',block:'shoot',a:'FTA',m:'FTM', sepL:true},
+  {key:'REB',label:'REB',title:'Rebotes (OF/DEF)',block:'pair-input',a:'OREB',m:'DREB', sepL:true},
+  {key:'AST',label:'AST',title:'Asistencias',type:'input-plus', sepL:true},
+  {key:'STL',label:'RBO',title:'Robos de balón',type:'input-plus'},
+  {key:'TOV',label:'PER',title:'Pérdidas',type:'input-plus'},
+  {key:'TAP',label:'TAP',title:'Tapones (a favor / en contra)',block:'pair-input-no-buttons',a:'BLK_F',m:'BLK_A', sepL:true},
+  {key:'PF',label:'FALTAS',title:'Faltas en contra',type:'input-plus', sepL:true},
+  {key:'FD',label:'',title:'Faltas recibidas',type:'input-plus'},
+  {key:'PTS',label:'PTS',title:'Puntos',type:'calc-bold', sepL:true}
+];
+
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+// ---------- Render ----------
+function render(){
+  const root = $('#layout'); root.innerHTML='';
+  state.teams.forEach((team, ti)=>{
+    const panel = document.createElement('section'); panel.className='panel';
+    panel.innerHTML = `
+      <div class="team-header">
+        <div class="left">
+          <div class="tile ${team.loaded?'':'glow'}" title="Cargar plantilla (.csv) o logo">
+            ${team.logo? `<img src="${team.logo}" alt="logo">` : (team.loaded? `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#9bb0c9" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 9h7l3 3v3H7z"/><text x="7" y="18" font-size="7" fill="#9bb0c9">CSV</text></svg>` : `<span class="smallnote">Cargar<br>plantilla</span>`)}
+            <span class="check">✅</span>
+            <input type="file" accept=".csv,image/*" data-action="headfile" data-team="${ti}">
+          </div>
+          <div class="team-title">
+            <input value="${team.name}" data-action="teamName" data-team="${ti}" />
+            <div class="smallnote">Coach:</div>
+            <input value="${team.coach||''}" data-action="coach" data-team="${ti}">
+          </div>
+        </div>
+        <div class="score-badge"><span id="teamPTS_${ti}">0</span></div>
+      </div>
+      <div class="table-wrap" data-lock="lock">
+        ${table(team, ti)}
+      </div>`;
+    root.appendChild(panel);
+  });
+  bindEvents();
+  recalcAll();
+  applyLock();
+  updateTitleFromTeams();
+}
+
+function th(c){
+  const help = c.title?` title="${c.title}"`:'';
+  const extra = c.sepL?' sepL':'';
+  const sticky = c.type==='id'?' sticky-name':'';
+  return `<th class="${sticky}${extra}"${help}>${c.label}</th>`;
+}
+function table(team, ti){
+  const head = `<thead><tr>${COLS.map(th).join('')}</tr></thead>`;
+  const body = `<tbody>${ team.players.map((p,pi)=> row(ti,pi,p)).join('') }</tbody>`;
+  return `<table>${head}${body}</table>`;
+}
+function row(ti,pi,p){
+  const id = (k)=>`t${ti}p${pi}_${k}`;
+  let tds='';
+  COLS.forEach(col=>{
+    if(col.type==='id'){
+      tds += `<td class="sticky-name num">
+        <div class="colstack" style="align-items:flex-start">
+          <input class="small" value="${esc(p.num||'')}" data-action="edit" data-team="${ti}" data-player="${pi}" data-field="num" placeholder="#">
+          <span class="smallnote">${esc(p.first||'')}</span>
+          <span class="smallnote">${esc(p.last||'')}</span>
+        </div>
+      </td>`; return;
+    }
+    if(col.block==='shoot'){
+      const a=col.a, m=col.m;
+      tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
+        <div class="rowpair">
+          <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
+          <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
+        </div>
+        <div class="rowpair" style="margin-top:4px">
+          <button class="mini good" data-action="hit" data-team="${ti}" data-player="${pi}" data-a="${a}" data-m="${m}">✓</button>
+          <button class="mini bad" data-action="miss" data-team="${ti}" data-player="${pi}" data-a="${a}" data-m="${m}">✗</button>
+        </div>
+      </td>`; return;
+    }
+    if(col.block==='pair-input'){
+      const a=col.a, m=col.m;
+      tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
+        <div class="rowpair">
+          <div class="colstack">
+            <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
+            <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${a}">OFF</button>
+          </div>
+          <div class="colstack">
+            <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
+            <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${m}">DEF</button>
+          </div>
+        </div>
+      </td>`; return;
+    }
+    if(col.block==='pair-input-no-buttons'){
+      const a=col.a, m=col.m;
+      tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
+        <div class="rowpair">
+          <div class="colstack">
+            <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
+            <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${a}">AF</button>
+          </div>
+          <div class="colstack">
+            <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
+            <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${m}">AC</button>
+          </div>
+        </div>
+      </td>`; return;
+    }
+    if(col.type==='input-plus'){
+      tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
+        <div class="colstack">
+          <input class="small" type="number" min="0" max="99" value="${p[col.key]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${col.key}">
+          <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${col.key}">${col.key==='PF'?'CONT':(col.key==='FD'?'FAV':'+1')}</button>
+        </div>
+      </td>`; return;
+    }
+    if(col.type==='calc-bold'){
+      tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}><span id="${id(col.key)}">${n(p[col.key])}</span></td>`; return;
+    }
+  });
+  return `<tr>${tds}</tr>`;
+}
+
+// ---------- Eventos ----------
+function bindEvents(){
+  // botones cabecera
+  $('#nuevo').onclick = ()=>{ state={teams:[makeTeam('Equipo 1'), makeTeam('Equipo 2')]}; app.matchName=''; render(); autosaveNow(); };
+
+  // inputs de roster / logos
+  $$('input[type=file][data-action="headfile"]').forEach(inp=> inp.onchange = async (e)=>{
+    const ti = +e.target.dataset.team; const f = e.target.files?.[0]; if(!f) return;
+    if(f.type && f.type.includes('image')){
+      const url = await fileToDataURL(f); state.teams[ti].logo=url; render(); scheduleAutoSave(); return;
+    }
+    const text = await f.text(); importRosterCSV(ti, text, {alsoStaff:true, alsoLogo:true, filename:(f.name||'')}); state.teams[ti].loaded = true; render(); scheduleAutoSave();
+  });
+
+  // team meta
+  $$('input[data-action="teamName"]').forEach(i=> i.addEventListener('input', e=>{ state.teams[+e.target.dataset.team].name = e.target.value; updateTitleFromTeams(); scheduleAutoSave(); }));
+  $$('input[data-action="coach"]').forEach(i=> i.addEventListener('input', e=>{ state.teams[+e.target.dataset.team].coach = e.target.value; scheduleAutoSave(); }));
+
+  // player edits
+  $$('input[data-action="edit"]').forEach(inp=> inp.addEventListener('input', e=>{ if(!app.ready){ tip(); return; } const {team,player,field}=e.target.dataset; state.teams[+team].players[+player][field]=e.target.value; scheduleAutoSave(); }));
+  $$('input[data-action="set"]').forEach(inp=> inp.addEventListener('change', e=>{
+    if(!app.ready){ tip(); return; }
+    const ti=+e.target.dataset.team, pi=+e.target.dataset.player, field=e.target.dataset.field;
+    let v=Math.max(0, Math.min(99, parseInt(e.target.value||'0',10))); const pl=state.teams[ti].players[pi];
+    pl[field]=v; clampMade(pl); recalcAll(); scheduleAutoSave();
+  }));
+  $$('.mini.good').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, a=e.target.dataset.a, m=e.target.dataset.m; bump(ti,pi,a,1); bump(ti,pi,m,1); clampMade(state.teams[ti].players[pi]); syncInputs(ti,pi,[a,m]); recalcAll(); scheduleAutoSave(); }));
+  $$('.mini.bad').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, a=e.target.dataset.a; bump(ti,pi,a,1); clampMade(state.teams[ti].players[pi]); syncInputs(ti,pi,[a]); recalcAll(); scheduleAutoSave(); }));
+  $$('.mini.plus').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, key=e.target.dataset.key; bump(ti,pi,key,1); syncInputs(ti,pi,[key]); recalcAll(); scheduleAutoSave(); }));
+}
+
+function tip(){ alert('Configura antes de empezar: carga las dos plantillas (Equipo 1 y Equipo 2).'); }
+
+// ---------- Cálculos ----------
+function clampMade(pl){ pl._2PM=Math.min(pl._2PM||0, pl._2PA||0); pl._3PM=Math.min(pl._3PM||0, pl._3PA||0); pl.FTM=Math.min(pl.FTM||0, pl.FTA||0); }
+function bump(ti,pi,key,by){ const pl=state.teams[ti].players[pi]; pl[key]=(pl[key]||0)+by; if(pl[key]>99) pl[key]=99; }
+
+function elInput(ti,pi,field){ return document.querySelector(`input[data-team="${ti}"][data-player="${pi}"][data-field="${field}"]`); }
+function syncInputs(ti,pi,fields){
+  const pl = state.teams[ti].players[pi];
+  fields.forEach(f=>{ const el = elInput(ti,pi,f); if(el){ el.value = pl[f]??0; } });
+}
+
+function recalcAll(){
+  state.teams.forEach((team,ti)=>{
+    let tpts=0;
+    team.players.forEach((pl,pi)=>{
+      pl.FGA=(pl._2PA||0)+(pl._3PA||0);
+      pl.FGM=(pl._2PM||0)+(pl._3PM||0);
+      pl.REB=(pl.OREB||0)+(pl.DREB||0);
+      pl.PTS=(pl._2PM||0)*2+(pl._3PM||0)*3+(pl.FTM||0);
+      const missFG=(pl.FGA||0)-(pl.FGM||0); const missFT=(pl.FTA||0)-(pl.FTM||0);
+      pl.VAL=(pl.PTS||0)+(pl.REB||0)+(pl.AST||0)+(pl.STL||0)+(pl.BLK_F||0)+(pl.FD||0)-missFG-missFT-(pl.TOV||0)-(pl.BLK_A||0)-(pl.PF||0);
+      tpts+=pl.PTS||0;
+      ['PTS','AST','STL','TOV','BLK_F','BLK_A','PF','FD'].forEach(k=>{ const el=$(`#t${ti}p${pi}_${k}`); if(el) el.textContent=n(pl[k]); });
+    });
+    const cap=$(`#teamPTS_${ti}`); if(cap) cap.textContent=tpts;
+  });
+}
+
+// ---------- Bloqueo + Título ----------
+function applyLock(){
+  const loadedCount = (state.teams[0].loaded?1:0) + (state.teams[1].loaded?1:0);
+  app.ready = loadedCount===2;
+  const lockables = $$('[data-lock="lock"] input, [data-lock="lock"] button');
+  lockables.forEach(el=> el.disabled = !app.ready);
+  // LED en tiles que falten
+  $$('.tile').forEach((tile,idx)=>{ const ok=!!state.teams[idx].loaded; tile.classList.toggle('glow', !ok && !app.ready); tile.classList.toggle('loaded', ok); });
+  const lc = document.getElementById('loadedCounter'); if(lc){ lc.textContent = `(${loadedCount}/2)`; }
+}
+function updateTitleFromTeams(){
+  if(state.teams[0].loaded && state.teams[1].loaded){
+    app.matchName = `${state.teams[0].name} vs ${state.teams[1].name}`;
+    const t = $('#titleText'); if(t) t.textContent = app.matchName;
+  } else {
+    const t = $('#titleText'); if(t) t.textContent = 'Cargar plantillas (2)';
+  }
+}
+
+// ---------- CSV ----------
+function parseCSV(text){
+  const sep = text.includes(';')?';':',';
+  const lines = text.split(/
+?
+/).filter(l=>l.trim().length);
+  if(!lines.length) return [];
+  const headers = lines[0].split(sep).map(h=>h.trim());
+  return lines.slice(1).map(line=>{
+    const parts=line.split(sep); const o={};
+    headers.forEach((h,i)=> o[h]= (parts[i]??'').trim()); return o;
+  });
+}
+function importRosterCSV(ti, text, opts={}){
+  const norm = s=> (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const rows = parseCSV(text);
+  const nrows = rows.map(r=>{ const o={}; Object.keys(r).forEach(k=> o[norm(k)] = r[k]); return o; });
+  const players = nrows.filter(r=> norm(r['type'])==='player');
+  let list=[];
+  if(players.length){
+    list = players.map(r=>({ num:(r['num']||r['numero']||r['#']||'')+'', first:(r['first']||r['nombre']||r['name']||r['jugador']||'')+'', last:(r['last']||r['apellidos']||r['apellido']||'')+'', nick:(r['nick']||r['mote']||r['apodo']||'')+'' })).slice(0,12);
+  } else if(nrows.length){
+    const keys = Object.keys(nrows[0]);
+    const kNum = keys.find(k=>/^(num|numero|dorsal|#)$/.test(k));
+    const kFirst = keys.find(k=>/^(first|nombre|name|jugador)$/.test(k));
+    const kLast  = keys.find(k=>/^(last|apellidos|apellido)$/.test(k));
+    const kNick  = keys.find(k=>/^(nick|mote|apodo)$/.test(k));
+    if(kNum){
+      list = nrows.slice(0,12).map(r=>{
+        let first = r[kFirst]||''; let last=r[kLast]||'';
+        if(first && !last && /jugador/.test(kFirst||'')){ const parts=String(first).split(' '); first=parts[0]||''; last=parts.slice(1).join(' '); }
+        if(!first && !last && kNick){ first=r[kNick]||''; }
+        return { num:r[kNum]||'', first:first||'', last:last||'' };
+      });
+    }
+  }
+  if(list.length){
+    state.teams[ti].players = Array.from({length:12}, (_,i)=>{
+      const base=EMPTY_PLAYER();
+      if(list[i]){
+        base.num = list[i].num||'';
+        const f=(list[i].first||'').trim(); const l=(list[i].last||'').trim(); const nick=(list[i].nick||'').trim();
+        if(f||l){ base.first=f; base.last=l; } else if(nick){ base.first=nick; base.last=''; }
+      }
+      return base;
+    });
+  }
+  // Meta opcional
+  const metaRow = nrows.find(r=> norm(r['type'])==='meta');
+  if(metaRow){
+    if(metaRow['teamname']) state.teams[ti].name = metaRow['teamname'];
+    if(metaRow['coach']) state.teams[ti].coach = metaRow['coach'];
+    if(metaRow['logo']) state.teams[ti].logo = metaRow['logo'];
+  }
+  // Si no hay meta teamname, usar nombre de archivo sin extensión
+  if((!metaRow || !metaRow['teamname']) && opts.filename){
+    const base = String(opts.filename).replace(/\.[^.]+$/,'');
+    if(/^Equipo\s*\d+$/i.test(state.teams[ti].name||'')) state.teams[ti].name = base;
+  }
+}
+
+// ---------- Utilidades ----------
+function n(v){ return (v==null||v==='')? '': String(v); }
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+function fileToDataURL(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }); }
+
+// ---------- AUTOGUARDADO ----------
+function sanitizeName(s){ return (s||'').replace(/[^\w\-\s]+/g,'').trim().replace(/\s+/g,'_'); }
+function csvFromState(){
+  const lines=[];
+  const headers=['team','coach','num','first','last','2PA','2PM','3PA','3PM','FTA','FTM','FGA','FGM','OREB','DREB','REB','AST','STL','TOV','BLK_F','BLK_A','PF','FD','PTS','VAL'];
+  lines.push(headers.join(';'));
+  state.teams.forEach(team=> team.players.forEach(pl=>{
+    const row=[team.name,team.coach||'',pl.num||'',pl.first||'',pl.last||'',pl._2PA||0,pl._2PM||0,pl._3PA||0,pl._3PM||0,pl.FTA||0,pl.FTM||0,pl.FGA||0,pl.FGM||0,pl.OREB||0,pl.DREB||0,pl.REB||0,pl.AST||0,pl.STL||0,pl.TOV||0,pl.BLK_F||0,pl.BLK_A||0,pl.PF||0,pl.FD||0,pl.PTS||0,pl.VAL||0];
+    lines.push(row.join(';'));
+  }));
+  return lines.join('\n');
+}
+async function writeFileSystem(csv){
+  return true; // sin guardado físico; el "live" se expone vía SW
+}
+function saveLocal(csv){ try{ localStorage.setItem('autosave_'+sanitizeName(app.matchName||'partido'), csv); return true; }catch(e){ return false; } }
+async function autosaveNow(){
+  updateTitleFromTeams();
+  const csv = csvFromState();
+  pushToSW({ json: exportJson(), csv }); // publica en /live.json y /live.csv
+  saveLocal(csv);
+  const badge = document.getElementById('autosaveBadge');
+  if(badge){ const t=new Date(); badge.textContent = `Autoguardado ✓ ${t.toLocaleTimeString()}`; badge.classList.add('ok'); }
+}
+function scheduleAutoSave(){ clearTimeout(app.saveTimer); app.saveTimer = setTimeout(autosaveNow, 300); }
+
+// ---------- Inicio ----------
+document.addEventListener('DOMContentLoaded', ()=>{ render(); applyLock(); updateTitleFromTeams(); });
+</script>
+</body>
+</html>

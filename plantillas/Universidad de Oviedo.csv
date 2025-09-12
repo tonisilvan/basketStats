@@ -1,0 +1,22 @@
+type;key;value;num;first;last;nick;height;pos
+meta;teamName;Universidad de Oviedo;;;;;;
+meta;teamSub;Oviedo;;;;;;
+meta;logo;../images/logos/logo-uni-ovi.jpg;;;;;;
+meta;coach;-;;;;;;
+meta;assistant;-;;;;;;
+meta;tournamentTitle;IV Edición del Torneo David Gustavo Acuña;;;;;;
+meta;tournamentLogo;../../images/logos/logo-acu.png;;;;;;
+player;;;8;Marcos;Bartolomé Coble;Marcos;1,83;Escolta
+player;;;4;Fernando;Suarez Hevia;EL LLAVIANU;181;Base
+player;;;11;Miguel;Zorrozua Herrero;Zorrozua;1,93;Alero
+player;;;34;Djigui;Diarra;Diarra;2,10;Pivot
+player;;;10;Ismael;Diarra;Black Panther;1,87;Alero
+player;;;1;Alejandro;Gómez Cabal;Cabal;181;Escolta
+player;;;7;Jorge;Arias González;;1'98;Alero
+player;;;9;Alejandro;Miranda;;1'85;Escolta
+player;;;33;Diego;Cuetos;El bombas;1.75;Base
+player;;;15;RAÚL;QUIRÓS;El Gentleman;1'98;Ala-Pivot
+player;;;;;;;;
+player;;;;;;;;
+player;;;;;;;;
+player;;;;;;;;
