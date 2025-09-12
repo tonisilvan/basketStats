@@ -65,11 +65,14 @@
 // ---- Service Worker (publica /live.json y /live.csv)
 if ('serviceWorker' in navigator) { try{ navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){} }
 
-function pushToSW({json, csv}){
+async function pushToSW({json, csv}) {
   if (!('serviceWorker' in navigator)) return;
   const msg = { type:'save', json, csv, title: app.matchName||'', updatedAt: Date.now() };
-  const send = () => navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage(msg);
-  if (navigator.serviceWorker.controller) send(); else navigator.serviceWorker.ready.then(send);
+  try {
+    const reg = await navigator.serviceWorker.ready;           // tiene .active aunque el doc no esté controlado
+    if (reg && reg.active) { reg.active.postMessage(msg); return; }
+  } catch(_) {}
+  try { if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage(msg); } catch(_) {}
 }
 function exportJson(){
   return { title: app.matchName || '', teams: state.teams.map(t => ({
