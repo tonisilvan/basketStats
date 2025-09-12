@@ -62,9 +62,9 @@
   <main class="layout" id="layout"></main>
 
 <script>
-// SW removido (Express maneja /live)
+// (Next.js) sin SW, usamos API /api/live
 
-async function pushToSW(){/* noop en Express */}
+async function pushToSW(){/* noop */}
   } catch(_) {}
   try { if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage(msg); } catch(_) {}
 }
@@ -390,7 +390,7 @@ async function autosaveNow(){
   updateTitleFromTeams();
   const csv = csvFromState();
   const payload = { json: exportJson(), csv, title: app.matchName };
-  try{ await fetch('/live', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload)}); }catch(_){/* ignore */}
+  try { await fetch('/api/live', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload)}); } catch (e) {}
   saveLocal(csv);
   const badge = document.getElementById('autosaveBadge');
   if(badge){ const t=new Date(); badge.textContent = `Autoguardado ✓ ${t.toLocaleTimeString()}`; badge.classList.add('ok'); }

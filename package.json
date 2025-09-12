@@ -1,17 +1,16 @@
 {
-  "name": "live-acta-express",
-  "version": "2.0.0",
+  "name": "next-live-acta",
+  "version": "1.0.0",
   "private": true,
-  "type": "commonjs",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.19.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@vercel/kv": "1.0.0"
   }
 }

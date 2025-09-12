@@ -1,13 +1,18 @@
-# Acta Live con Express (v2)
-- Sirve `public/acta.html` (mesa) y `public/overlay.html` (OBS).
-- El acta hace `POST /live` con cada cambio y el servidor expone `/live.json` y `/live.csv`.
-- Sin Service Worker (funciona perfecto dentro de OBS).
+# Next.js Live Acta (Vercel-ready)
 
-## Uso
-```
-npm i
-npm start
-# Acta:   http://localhost:3000/
-# Overlay: http://localhost:3000/overlay.html?fg=%23fff&bg=transparent&size=80&align=center
-```
-Coloca tus CSV en `public/plantillas/` y añade sus nombres (sin .csv) en `public/plantillas/index.json` como en la versión estática.
+- `public/acta.html` → mesa (envía autosave a **/api/live**).
+- `public/overlay.html` → overlay OBS (lee **/api/live**).
+- `pages/api/live.js` y `pages/api/live.csv.js` → API con **Vercel KV** si está disponible; si no, usa **memoria efímera** (válido para tests, no garantiza persistencia entre cold starts).
+
+## Despliegue en Vercel
+1. Crea un proyecto nuevo y sube esta carpeta (o súbela a GitHub y conecta).
+2. (Opcional, recomendado) Añade la integration **Vercel KV** y crea una DB. No hace falta tocar código.
+3. Deploy.
+
+Rutas:
+- Home → `/acta.html`
+- Overlay → `/overlay.html?fg=%23fff&bg=transparent&size=80&align=center`
+- API → `GET/POST /api/live`, `GET /api/live.csv`
+
+## Notas
+- Sin KV, el estado vive en memoria de la lambda (puede perderse tras inactividad). Con **Vercel KV** es estable y multi-visitante.

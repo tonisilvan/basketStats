@@ -2,13 +2,10 @@
 <html lang="es">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Overlay OBS (Express)</title>
+<title>Overlay OBS (Next.js)</title>
 <style>
   :root{
-    --fg:#ffffff;
-    --bg:transparent;
-    --size:64px;
-    --align:left;
+    --fg:#ffffff; --bg:transparent; --size:64px; --align:left;
     --shadow:0 2px 10px rgba(0,0,0,.45);
     --font: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, "Helvetica Neue", Arial, "Noto Sans";
   }
@@ -29,7 +26,7 @@
 
   async function tick(){
     try{
-      const r = await fetch('/live.json', {cache:'no-store'});
+      const r = await fetch('/api/live', {cache:'no-store'});
       if(r.ok){
         const data = await r.json();
         const a = (data.teams?.[0]?.players||[]).reduce((s,p)=> s + (p.PTS||0), 0);
