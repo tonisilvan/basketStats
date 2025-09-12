@@ -6,124 +6,174 @@
     <title>Estadísticas jugadores</title>
     <style>
         :root{
-          --bg: transparent;              /* usa 'transparent' para OBS o #0b0f14 para fondo oscuro */
+          --bg: transparent;            /* pon #0b0f14 si no es overlay */
           --ink: #e8eef9;
           --muted:#9bb0c9;
-          --accentA:#48bfff;              /* cian (lado izq)  */
-          --accentB:#f6a63a;              /* naranja (lado dcha) */
+          --a:#6bd3ff;                  /* lado A */
+          --b:#ffba5c;                  /* lado B */
+          --radius:22px;
         }
         *{box-sizing:border-box}
-        body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
-        .wrap{padding:24px;display:flex;flex-direction:column;gap:18px}
-        .title{font-weight:900;letter-spacing:.5px;text-align:center;font-size:28px;text-shadow:0 2px 12px rgba(0,0,0,.45)}
-        .card{
-          display:grid;grid-template-columns:1fr 80px 1fr;align-items:center;gap:16px;
-          border-radius:18px;padding:18px;background:rgba(12,18,26,.65);
-          box-shadow:0 6px 40px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.06);
+        html,body{height:100%}
+        body{
+          margin:0;background:var(--bg);color:var(--ink);
+          font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial;
+        }
+        .screen{
+          min-height:100vh;display:grid;place-items:center;padding:24px;
+        }
+        .frame{
+          width:min(1600px,95vw);
+          border-radius:var(--radius);
+          padding:26px;
+          background:rgba(18,24,33,.75);
+          box-shadow:0 30px 80px rgba(0,0,0,.40), inset 0 0 0 2px rgba(255,255,255,.06);
           backdrop-filter: blur(6px);
         }
-        .vs{display:grid;place-items:center;color:#98bbff;font-weight:900;border-radius:999px;
-            background:radial-gradient(ellipse at 50% 35%, #1c2636, #0c1119); width:80px;height:80px;
-            box-shadow: 0 0 0 2px #223046, 0 0 24px rgba(60,120,255,.25);}
-        .side{display:grid;grid-template-columns:112px 1fr;gap:16px;align-items:center}
+        .title{
+          text-align:center;font-weight:900;letter-spacing:.6px;
+          font-size:clamp(18px,2.4vw,28px); margin-bottom:18px;
+          text-shadow:0 2px 12px rgba(0,0,0,.45);
+        }
+        .grid{
+          display:grid;grid-template-columns:1fr clamp(90px,10vw,120px) 1fr;gap:20px;align-items:center;
+        }
+        .vs{
+          width:clamp(90px,10vw,120px);height:clamp(90px,10vw,120px);border-radius:999px;
+          display:grid;place-items:center;font-weight:900;color:#cfe2ff;
+          background:radial-gradient(60% 60% at 50% 40%, #1d2a3c, #0d1520);
+          box-shadow:0 0 0 2px #26364d, 0 0 28px rgba(90,140,255,.35);
+          font-size:clamp(24px,2.4vw,30px);letter-spacing:1px;
+        }
+        .col{display:grid;grid-template-columns:140px 1fr;gap:16px}
         .logo{
-          width:112px;height:112px;border-radius:16px;overflow:hidden;display:grid;place-items:center;
-          background:#0f1620;border:2px solid #26364d; box-shadow:0 10px 30px rgba(0,0,0,.35);
+          width:140px;height:140px;border-radius:18px;overflow:hidden;
+          display:grid;place-items:center;background:#0e1620;border:2px solid #2a3a4d;
+          box-shadow:0 10px 30px rgba(0,0,0,.35)
         }
         .logo img{width:100%;height:100%;object-fit:cover}
-        .who{display:flex;flex-direction:column;gap:4px}
-        .player{font-size:22px;font-weight:800;line-height:1.05}
-        .team{font-size:13px;color:var(--muted)}
-        .badge{display:inline-block;font-weight:900;padding:2px 8px;border-radius:999px;font-size:12px;margin-left:8px}
-        .a .badge{background:rgba(72,191,255,.15); color:#bfe7ff; border:1px solid rgba(72,191,255,.35)}
-        .b .badge{background:rgba(246,166,58,.15); color:#ffe3ba; border:1px solid rgba(246,166,58,.35)}
-        .stats{display:grid;grid-template-columns:repeat(3,minmax(92px,1fr));gap:10px;margin-top:8px}
-        .pill{
-          border:1px solid #2a3a4d;border-radius:12px;padding:8px 10px;background:#0e1620;
-          display:flex;flex-direction:column;align-items:center;gap:4px;min-height:62px
+        .head{display:flex;flex-direction:column;gap:6px}
+        .name{font-weight:900;line-height:1.02;font-size:clamp(22px,2.3vw,28px)}
+        .team{font-size:clamp(12px,1.2vw,14px);color:var(--muted)}
+        .val{display:inline-block;margin-left:10px;font-size:12px;font-weight:900;padding:4px 10px;border-radius:999px}
+        .a .val{color:#cfefff;background:rgba(107,211,255,.12);border:1px solid rgba(107,211,255,.35)}
+        .b .val{color:#ffe7c4;background:rgba(255,186,92,.12); border:1px solid rgba(255,186,92,.35)}
+        .stats{
+          margin-top:10px;
+          display:grid;grid-template-columns:repeat(3,1fr);gap:12px
         }
-        .pill .v{font-weight:900;font-size:18px}
-        .pill .k{font-size:11px;color:var(--muted);letter-spacing:.3px}
-        .a .pill{box-shadow:0 0 0 1px rgba(72,191,255,.15) inset}
-        .b .pill{box-shadow:0 0 0 1px rgba(246,166,58,.15) inset}
-        @media (max-width:900px){
-          .card{grid-template-columns:1fr;gap:12px}
-          .vs{width:64px;height:64px;margin:0 auto}
+        .pill{
+          background:#0f1724;border:1px solid #2a3a4d;border-radius:14px;padding:10px 12px;
+          display:flex;flex-direction:column;align-items:center;gap:6px;min-height:86px;
+          box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+        }
+        .a .pill{box-shadow:inset 0 0 0 1px rgba(107,211,255,.12)}
+        .b .pill{box-shadow:inset 0 0 0 1px rgba(255,186,92,.12)}
+        .v{font-size:clamp(20px,2.2vw,26px);font-weight:900}
+        .k{font-size:11px;color:var(--muted);letter-spacing:.3px}
+        .split{font-size:12px;color:#b6c7de}
+        @media (max-width:980px){
+          .grid{grid-template-columns:1fr;gap:18px}
+          .col{grid-template-columns:110px 1fr}
+          .logo{width:110px;height:110px}
+          .vs{margin:0 auto}
         }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <div class="title">ESTADÍSTICAS JUGADORES — TOP VAL</div>
-    <div id="card" class="card" aria-live="polite">
-        <div id="left"  class="side a"></div>
-        <div class="vs">VS</div>
-        <div id="right" class="side b"></div>
+<div class="screen">
+    <div class="frame">
+        <div class="title">ESTADÍSTICAS JUGADORES — TOP VAL</div>
+        <div class="grid">
+            <section id="left"  class="col a"></section>
+            <div class="vs">VS</div>
+            <section id="right" class="col b"></section>
+        </div>
     </div>
 </div>
+
 <script>
-    const q = new URLSearchParams(location.search);
+    // Permite ?bg, ?a, ?b para colores
+    const q=new URLSearchParams(location.search);
     if(q.get('bg')) document.documentElement.style.setProperty('--bg', q.get('bg'));
-    if(q.get('accentA')) document.documentElement.style.setProperty('--accentA', q.get('accentA'));
-    if(q.get('accentB')) document.documentElement.style.setProperty('--accentB', q.get('accentB'));
+    if(q.get('a'))  document.documentElement.style.setProperty('--a', q.get('a'));
+    if(q.get('b'))  document.documentElement.style.setProperty('--b', q.get('b'));
 
     const pct = (m,a)=> a>0 ? (100*m/a).toFixed(1)+'%' : '—';
-    const nameOf = p => [p.first||'', p.last||''].join(' ').trim() || ('#'+(p.num||''));
-    const teamLogoCandidates = (name)=>[
-      (name&&name.logo)||'',                                     // si el JSON trae logo
-      `/plantillas/${name}.png`, `/plantillas/${name}.jpg`, `/plantillas/${name}.svg`
-    ];
+    const split = (m,a)=> `${m}/${a}`;
+    const fullName = p => [p.first||'', p.last||''].join(' ').trim() || ('#'+(p.num||''));
 
-    function playerBlock(p, teamName, teamLogoUrl, sideClass){
-      const el = document.createElement('div'); el.className='side '+sideClass;
-      el.innerHTML = `
-        <div class="logo"><img alt="logo ${teamName}" loading="eager"></div>
-        <div class="who">
-          <div class="player">${nameOf(p)} <span class="badge">VAL ${p.VAL ?? 0}</span></div>
-          <div class="team">${teamName}</div>
+    function logoCandidates(team){
+      const name = (team?.name||'').trim();
+      const metaLogo = (team?.logo||'').trim(); // del CSV meta (url o ruta)
+      const norm = s => s.replace(/\s+/g,'_');
+      const c = [];
+      if (metaLogo) {
+        // si es url absoluta o data-url, úsala; si parece ruta, intenta en /plantillas
+        if (/^data:|^https?:/.test(metaLogo)) c.push(metaLogo);
+        else c.push(`/plantillas/${metaLogo}`);
+      }
+      c.push(`/plantillas/${norm(name)}.png`,
+             `/plantillas/${norm(name)}.jpg`,
+             `/plantillas/${norm(name)}.svg`,
+             `/plantillas/${norm(name)}.webp`);
+      return c;
+    }
+
+    function playerView(p, team, sideClass){
+      const root = document.createElement('div'); root.className='col '+sideClass;
+      root.innerHTML = `
+        <div class="logo"><img alt="logo ${team?.name||''}" loading="eager"></div>
+        <div class="head">
+          <div class="name">${fullName(p)} <span class="val">VAL ${p.VAL??0}</span></div>
+          <div class="team">${team?.name||''}</div>
           <div class="stats">
             <div class="pill"><div class="v">${p.PTS||0}</div><div class="k">PTS</div></div>
             <div class="pill"><div class="v">${(p.OREB||0)+(p.DREB||0)}</div><div class="k">REB</div></div>
             <div class="pill"><div class="v">${p.AST||0}</div><div class="k">AST</div></div>
             <div class="pill"><div class="v">${p.STL||0}</div><div class="k">ROB</div></div>
-            <div class="pill"><div class="v">${pct(p._2PM||0,p._2PA||0)}</div><div class="k">%T2</div></div>
-            <div class="pill"><div class="v">${pct(p._3PM||0,p._3PA||0)}</div><div class="k">%T3</div></div>
+            <div class="pill">
+              <div class="v">${pct(p._2PM||0,p._2PA||0)}</div>
+              <div class="k">% T2</div>
+              <div class="split">${split(p._2PM||0,p._2PA||0)}</div>
+            </div>
+            <div class="pill">
+              <div class="v">${pct(p._3PM||0,p._3PA||0)}</div>
+              <div class="k">% T3</div>
+              <div class="split">${split(p._3PM||0,p._3PA||0)}</div>
+            </div>
           </div>
         </div>`;
-      // logo
-      const img = el.querySelector('img');
-      const cands = teamLogoUrl ? [teamLogoUrl] : teamLogoCandidates(teamName);
+      // logos con fallback
+      const img = root.querySelector('img');
+      const cands = logoCandidates(team);
       let i=0; img.onerror=()=>{ i++; if(i<cands.length) img.src=cands[i]; };
-      img.src = cands[i];
-      return el;
+      img.src=cands[i];
+      return root;
     }
 
-    function pickTop2(data){
-      const teams = data.teams||[];
-      const flat=[];
-      teams.forEach((t,ti)=>{
-        (t.players||[]).forEach(pl=> flat.push({pl, teamName:t.name||`Equipo ${ti+1}`, logo:t.logo}));
-      });
-      flat.sort((a,b)=> (b.pl.VAL||0) - (a.pl.VAL||0));
-      return [flat[0], flat[1]].filter(Boolean);
+    function topTwoByVal(data){
+      const arr=[];
+      (data.teams||[]).forEach((t)=> (t.players||[]).forEach(pl=> arr.push({pl, team:t})));
+      arr.sort((a,b)=> (b.pl.VAL||0) - (a.pl.VAL||0));
+      return [arr[0], arr[1]].filter(Boolean);
     }
 
-    async function tick(){
+    async function loop(){
       try{
         const r = await fetch('/api/live', {cache:'no-store'});
         if(r.ok){
           const data = await r.json();
-          const top = pickTop2(data);
-          const L = document.getElementById('left');
-          const R = document.getElementById('right');
+          const [A,B] = topTwoByVal(data);
+          const L=document.getElementById('left'), R=document.getElementById('right');
           L.innerHTML=''; R.innerHTML='';
-          if(top[0]) L.appendChild(playerBlock(top[0].pl, top[0].teamName, top[0].logo, 'a'));
-          if(top[1]) R.appendChild(playerBlock(top[1].pl, top[1].teamName, top[1].logo, 'b'));
+          if (A) L.replaceWith(playerView(A.pl, A.team, 'a')), L.id='left';
+          if (B) R.replaceWith(playerView(B.pl, B.team, 'b')), R.id='right';
         }
-      }catch(e){ /* silent */ }
-      setTimeout(tick, 500);
+      }catch(e){/*silent*/}
+      setTimeout(loop, 500);
     }
-    tick();
+    loop();
 </script>
 </body>
 </html>
