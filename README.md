@@ -1,16 +1,13 @@
-# Acta + Overlay v3 (lee plantillas desde /plantillas)
+# Acta Live con Express (v2)
+- Sirve `public/acta.html` (mesa) y `public/overlay.html` (OBS).
+- El acta hace `POST /live` con cada cambio y el servidor expone `/live.json` y `/live.csv`.
+- Sin Service Worker (funciona perfecto dentro de OBS).
 
-- `acta.html` ahora **solo** carga plantillas desde la carpeta `/plantillas` usando `plantillas/index.json`.
-- `overlay.html` lee `/live.json` expuesto por `sw.js`.
-
-## Local
-Sirve con un servidor (no file://), por ejemplo:
+## Uso
 ```
-python3 -m http.server 5500
-# http://localhost:5500/acta.html
+npm i
+npm start
+# Acta:   http://localhost:3000/
+# Overlay: http://localhost:3000/overlay.html?fg=%23fff&bg=transparent&size=80&align=center
 ```
-Coloca tus CSVs en `/plantillas` y **añádelos a `plantillas/index.json`** sin extensión.
-
-## Producción
-Sube todo a Vercel como estático. La home reescribe a `/acta.html`.
-
+Coloca tus CSV en `public/plantillas/` y añade sus nombres (sin .csv) en `public/plantillas/index.json` como en la versión estática.

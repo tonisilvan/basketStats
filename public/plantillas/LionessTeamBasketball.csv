@@ -1,0 +1,22 @@
+type;key;value;num;first;last;nick;height;pos
+meta;teamName;Lioness Team Basketball;;;;;;
+meta;teamSub;León;;;;;;
+meta;logo;../images/logos/logo-Lioness-team-basketball.jpg;;;;;;
+meta;coach;Diego Cuesta;;;;;;
+meta;assistant;Iñaki Quintas;;;;;;
+meta;tournamentTitle;IV Edición del Torneo David Gustavo Acuña;;;;;;
+meta;tournamentLogo;../../images/logos/logo-acu.png;;;;;;
+player;;;18;Julia;Alonso;;1,67;Base
+player;;;28;Marina;Díez;;1,63;Alero
+player;;;22;Marina;García;;1,63;Escolta
+player;;;33;Cristina;Castellanos;;1,69;Alero
+player;;;99;Diana;Fernandez Amador;;1,74;Pívot
+player;;;47;Daniela;López Santín;;1,66;Base
+player;;;17;Yaiza;Robles;Maquinon;1,69;Base
+player;;;88;Luna;De la Puente González;;1,62;Base
+player;;;32;Sara;López;Antúnez;1,82;Pívot
+player;;;11;Andrea;Pérez Fuertes;;1,71;Pívot
+player;;;20;Ana;Fernández;;1,63;Alero
+player;;;9;Aitana;Estrada San Román;;1,68;Alero
+player;;;14;Lydia;García;;1,68;Escolta
+player;;;0;Yael;García Boada;;1,70;Alero

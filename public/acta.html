@@ -62,15 +62,9 @@
   <main class="layout" id="layout"></main>
 
 <script>
-// ---- Service Worker (publica /live.json y /live.csv)
-if ('serviceWorker' in navigator) { try{ navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){} }
+// SW removido (Express maneja /live)
 
-async function pushToSW({json, csv}) {
-  if (!('serviceWorker' in navigator)) return;
-  const msg = { type:'save', json, csv, title: app.matchName||'', updatedAt: Date.now() };
-  try {
-    const reg = await navigator.serviceWorker.ready;           // tiene .active aunque el doc no esté controlado
-    if (reg && reg.active) { reg.active.postMessage(msg); return; }
+async function pushToSW(){/* noop en Express */}
   } catch(_) {}
   try { if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage(msg); } catch(_) {}
 }
@@ -395,7 +389,8 @@ function saveLocal(csv){ try{ localStorage.setItem('autosave_'+sanitizeName(app.
 async function autosaveNow(){
   updateTitleFromTeams();
   const csv = csvFromState();
-  pushToSW({ json: exportJson(), csv });
+  const payload = { json: exportJson(), csv, title: app.matchName };
+  try{ await fetch('/live', {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload)}); }catch(_){/* ignore */}
   saveLocal(csv);
   const badge = document.getElementById('autosaveBadge');
   if(badge){ const t=new Date(); badge.textContent = `Autoguardado ✓ ${t.toLocaleTimeString()}`; badge.classList.add('ok'); }
