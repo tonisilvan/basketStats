@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Acta rápida — 2 equipos (live SW)</title>
+<title>Acta rápida — 2 equipos (v3 plantillas/)</title>
 <style>
   :root{
     --bg:#0b0f14;--panel:#121821;--ink:#e8eef9;--muted:#9bb0c9;--line:#223046;
@@ -23,14 +23,10 @@
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column}
   .team-header{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
   .left{display:flex;align-items:center;gap:12px}
-  .tile{width:56px;height:56px;border-radius:12px;background:var(--chip);border:1px dashed #324153;display:grid;place-items:center;position:relative;overflow:hidden}
-  .tile input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
-  .tile img{width:100%;height:100%;object-fit:cover}
-  .tile.glow{box-shadow:0 0 0 2px #2dd4bf,0 0 16px rgba(45,212,191,.45)}
-  .tile.loaded .check{display:inline-block}
-  .check{position:absolute;bottom:4px;right:6px;background:#16a34a;color:white;font-size:11px;padding:2px 6px;border-radius:999px;display:none}
   .team-title{display:flex;flex-direction:column}
   .team-title input{background:transparent;border:1px solid #2a3a4d;border-radius:8px;padding:4px 6px;color:var(--ink);font-weight:600;min-width:140px}
+  .ctrls{display:flex;gap:8px;align-items:center}
+  select{background:#0d1520;border:1px solid #2a3a4d;border-radius:10px;color:var(--ink);padding:6px 8px}
   .score-badge{width:56px;height:56px;border-radius:12px;background:#e5eef9;color:#0b0f14;display:grid;place-items:center;font-weight:900;font-size:22px}
   .table-wrap{max-height:70vh;overflow:auto}
   table{width:100%;border-collapse:separate;border-spacing:0}
@@ -66,21 +62,17 @@
   <main class="layout" id="layout"></main>
 
 <script>
-// ---- Service Worker (para exponer /live.json y /live.csv)
-if ('serviceWorker' in navigator) {
-  try { navigator.serviceWorker.register('./sw.js', { scope: './' }); } catch(e) { console.warn('SW off', e); }
-}
+// ---- Service Worker (publica /live.json y /live.csv)
+if ('serviceWorker' in navigator) { try{ navigator.serviceWorker.register('./sw.js',{scope:'./'});}catch(e){} }
+
 function pushToSW({json, csv}){
   if (!('serviceWorker' in navigator)) return;
   const msg = { type:'save', json, csv, title: app.matchName||'', updatedAt: Date.now() };
   const send = () => navigator.serviceWorker.controller && navigator.serviceWorker.controller.postMessage(msg);
-  if (navigator.serviceWorker.controller) send();
-  else navigator.serviceWorker.ready.then(send);
+  if (navigator.serviceWorker.controller) send(); else navigator.serviceWorker.ready.then(send);
 }
 function exportJson(){
-  return {
-    title: app.matchName || '',
-    teams: state.teams.map(t => ({
+  return { title: app.matchName || '', teams: state.teams.map(t => ({
       name: t.name, coach: t.coach,
       points: t.players.reduce((s,p)=> s + (p.PTS||0), 0),
       players: t.players
@@ -89,11 +81,12 @@ function exportJson(){
   };
 }
 
-// ---------- Modelo de datos ----------
+// ---------- Datos ----------
 const EMPTY_PLAYER = ()=>({num:'',first:'',last:'',_2PA:0,_2PM:0,_3PA:0,_3PM:0,FTA:0,FTM:0,OREB:0,DREB:0,REB:0,AST:0,STL:0,TOV:0,BLK_F:0,BLK_A:0,PF:0,FD:0,FGM:0,FGA:0,PTS:0,VAL:0});
 const makeTeam = (name='Equipo')=>({name,coach:'',logo:'',loaded:false,players:Array.from({length:12}, EMPTY_PLAYER)});
 let state = { teams:[ makeTeam('Equipo 1'), makeTeam('Equipo 2') ] };
 let app = { ready:false, matchName:'', saveTimer:null };
+let plantillaList = [];
 
 const COLS = [
   {key:'id',label:'#',type:'id',sticky:true},
@@ -113,23 +106,35 @@ const COLS = [
 const $ = (s,r=document)=>r.querySelector(s);
 const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
 
+async function loadIndex(){
+  try{
+    const r = await fetch('./plantillas/index.json', {cache:'no-store'});
+    const j = await r.json();
+    plantillaList = (j.files||[]).map(f=>({ name:f, file:`./plantillas/${f}.csv` }));
+  }catch(e){ console.error('No se pudo leer plantillas/index.json', e); plantillaList=[]; }
+}
+
 // ---------- Render ----------
 function render(){
   const root = $('#layout'); root.innerHTML='';
   state.teams.forEach((team, ti)=>{
     const panel = document.createElement('section'); panel.className='panel';
+    const options = plantillaList.map(p=>`<option value="${p.file}">${p.name}</option>`).join('');
     panel.innerHTML = `
       <div class="team-header">
         <div class="left">
-          <div class="tile ${team.loaded?'':'glow'}" title="Cargar plantilla (.csv) o logo">
-            ${team.logo? `<img src="${team.logo}" alt="logo">` : (team.loaded? `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#9bb0c9" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 9h7l3 3v3H7z"/><text x="7" y="18" font-size="7" fill="#9bb0c9">CSV</text></svg>` : `<span class="smallnote">Cargar<br>plantilla</span>`)}
-            <span class="check">✅</span>
-            <input type="file" accept=".csv,image/*" data-action="headfile" data-team="${ti}">
-          </div>
           <div class="team-title">
             <input value="${team.name}" data-action="teamName" data-team="${ti}" />
             <div class="smallnote">Coach:</div>
             <input value="${team.coach||''}" data-action="coach" data-team="${ti}">
+          </div>
+          <div class="ctrls">
+            <select data-action="pick" data-team="${ti}">
+              <option value="">— Selecciona plantilla —</option>
+              ${options}
+            </select>
+            <button data-action="load" data-team="${ti}">Cargar</button>
+            <span class="smallnote" id="s_${ti}">${team.loaded?'✔ cargada':''}</span>
           </div>
         </div>
         <div class="score-badge"><span id="teamPTS_${ti}">0</span></div>
@@ -229,16 +234,21 @@ function row(ti,pi,p){
 
 // ---------- Eventos ----------
 function bindEvents(){
-  // botones cabecera
+  // botones
   $('#nuevo').onclick = ()=>{ state={teams:[makeTeam('Equipo 1'), makeTeam('Equipo 2')]}; app.matchName=''; render(); autosaveNow(); };
 
-  // inputs de roster / logos
-  $$('input[type=file][data-action="headfile"]').forEach(inp=> inp.onchange = async (e)=>{
-    const ti = +e.target.dataset.team; const f = e.target.files?.[0]; if(!f) return;
-    if(f.type && f.type.includes('image')){
-      const url = await fileToDataURL(f); state.teams[ti].logo=url; render(); scheduleAutoSave(); return;
-    }
-    const text = await f.text(); importRosterCSV(ti, text, {alsoStaff:true, alsoLogo:true, filename:(f.name||'')}); state.teams[ti].loaded = true; render(); scheduleAutoSave();
+  // selects + botón cargar
+  $$('button[data-action="load"]').forEach(b=> b.onclick = async (e)=>{
+    const ti = +e.target.dataset.team;
+    const sel = document.querySelector(`select[data-action="pick"][data-team="${ti}"]`);
+    const file = sel.value; if(!file){ alert('Selecciona una plantilla'); return; }
+    try{
+      const text = await (await fetch(file, {cache:'no-store'})).text();
+      importRosterCSV(ti, text, {filename:file.split('/').pop()});
+      state.teams[ti].loaded = true;
+      const flag = document.getElementById(`s_${ti}`); if(flag) flag.textContent = '✔ cargada';
+      render(); scheduleAutoSave();
+    }catch(err){ alert('No se pudo cargar la plantilla: '+file); }
   });
 
   // team meta
@@ -293,8 +303,6 @@ function applyLock(){
   app.ready = loadedCount===2;
   const lockables = $$('[data-lock="lock"] input, [data-lock="lock"] button');
   lockables.forEach(el=> el.disabled = !app.ready);
-  // LED en tiles que falten
-  $$('.tile').forEach((tile,idx)=>{ const ok=!!state.teams[idx].loaded; tile.classList.toggle('glow', !ok && !app.ready); tile.classList.toggle('loaded', ok); });
   const lc = document.getElementById('loadedCounter'); if(lc){ lc.textContent = `(${loadedCount}/2)`; }
 }
 function updateTitleFromTeams(){
@@ -306,12 +314,10 @@ function updateTitleFromTeams(){
   }
 }
 
-// ---------- CSV ----------
+// ---------- CSV / import ----------
 function parseCSV(text){
   const sep = text.includes(';')?';':',';
-  const lines = text.split(/
-?
-/).filter(l=>l.trim().length);
+  const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
   if(!lines.length) return [];
   const headers = lines[0].split(sep).map(h=>h.trim());
   return lines.slice(1).map(line=>{
@@ -320,7 +326,7 @@ function parseCSV(text){
   });
 }
 function importRosterCSV(ti, text, opts={}){
-  const norm = s=> (s||'').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  const norm = s=> (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   const rows = parseCSV(text);
   const nrows = rows.map(r=>{ const o={}; Object.keys(r).forEach(k=> o[norm(k)] = r[k]); return o; });
   const players = nrows.filter(r=> norm(r['type'])==='player');
@@ -360,20 +366,18 @@ function importRosterCSV(ti, text, opts={}){
     if(metaRow['coach']) state.teams[ti].coach = metaRow['coach'];
     if(metaRow['logo']) state.teams[ti].logo = metaRow['logo'];
   }
-  // Si no hay meta teamname, usar nombre de archivo sin extensión
   if((!metaRow || !metaRow['teamname']) && opts.filename){
     const base = String(opts.filename).replace(/\.[^.]+$/,'');
     if(/^Equipo\s*\d+$/i.test(state.teams[ti].name||'')) state.teams[ti].name = base;
   }
 }
 
-// ---------- Utilidades ----------
+// ---------- Util ---------
 function n(v){ return (v==null||v==='')? '': String(v); }
 function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-function fileToDataURL(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }); }
-
-// ---------- AUTOGUARDADO ----------
 function sanitizeName(s){ return (s||'').replace(/[^\w\-\s]+/g,'').trim().replace(/\s+/g,'_'); }
+
+// ---------- Auto-guardado (solo SW + localStorage) ----------
 function csvFromState(){
   const lines=[];
   const headers=['team','coach','num','first','last','2PA','2PM','3PA','3PM','FTA','FTM','FGA','FGM','OREB','DREB','REB','AST','STL','TOV','BLK_F','BLK_A','PF','FD','PTS','VAL'];
@@ -382,24 +386,21 @@ function csvFromState(){
     const row=[team.name,team.coach||'',pl.num||'',pl.first||'',pl.last||'',pl._2PA||0,pl._2PM||0,pl._3PA||0,pl._3PM||0,pl.FTA||0,pl.FTM||0,pl.FGA||0,pl.FGM||0,pl.OREB||0,pl.DREB||0,pl.REB||0,pl.AST||0,pl.STL||0,pl.TOV||0,pl.BLK_F||0,pl.BLK_A||0,pl.PF||0,pl.FD||0,pl.PTS||0,pl.VAL||0];
     lines.push(row.join(';'));
   }));
-  return lines.join('\n');
-}
-async function writeFileSystem(csv){
-  return true; // sin guardado físico; el "live" se expone vía SW
+  return lines.join('\\n');
 }
 function saveLocal(csv){ try{ localStorage.setItem('autosave_'+sanitizeName(app.matchName||'partido'), csv); return true; }catch(e){ return false; } }
 async function autosaveNow(){
   updateTitleFromTeams();
   const csv = csvFromState();
-  pushToSW({ json: exportJson(), csv }); // publica en /live.json y /live.csv
+  pushToSW({ json: exportJson(), csv });
   saveLocal(csv);
   const badge = document.getElementById('autosaveBadge');
   if(badge){ const t=new Date(); badge.textContent = `Autoguardado ✓ ${t.toLocaleTimeString()}`; badge.classList.add('ok'); }
 }
-function scheduleAutoSave(){ clearTimeout(app.saveTimer); app.saveTimer = setTimeout(autosaveNow, 300); }
+function scheduleAutoSave(){ clearTimeout(app.saveTimer); app.saveTimer = setTimeout(autosaveNow, 250); }
 
 // ---------- Inicio ----------
-document.addEventListener('DOMContentLoaded', ()=>{ render(); applyLock(); updateTitleFromTeams(); });
+document.addEventListener('DOMContentLoaded', async ()=>{ await loadIndex(); render(); applyLock(); updateTitleFromTeams(); });
 </script>
 </body>
 </html>

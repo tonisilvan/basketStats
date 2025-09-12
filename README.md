@@ -1,17 +1,16 @@
-# Acta + Overlay (sin backend) — build local
+# Acta + Overlay v3 (lee plantillas desde /plantillas)
 
-## Cómo abrir en local (IMPORTANTE)
-No lo abras con `file://`. Usa un servidor estático:
-- Opción 1 (Python): `python3 -m http.server 5500` y abre http://localhost:5500/
-- Opción 2 (Node): `npx serve` en la carpeta del proyecto
-- Opción 3 (VS Code): extensión *Live Server*
+- `acta.html` ahora **solo** carga plantillas desde la carpeta `/plantillas` usando `plantillas/index.json`.
+- `overlay.html` lee `/live.json` expuesto por `sw.js`.
 
-El Service Worker se registra en `./sw.js` (scope `./`), así funciona también si sirves desde un subdirectorio.
+## Local
+Sirve con un servidor (no file://), por ejemplo:
+```
+python3 -m http.server 5500
+# http://localhost:5500/acta.html
+```
+Coloca tus CSVs en `/plantillas` y **añádelos a `plantillas/index.json`** sin extensión.
 
-## Si ves la página vacía
-1. Abre DevTools → **Console** para ver errores.
-2. Borra SW y caché: DevTools → **Application** → **Clear storage** → Clear site data; y **Application → Service Workers → Unregister**.
-3. Recarga dura (Cmd/Ctrl+Shift+R).
+## Producción
+Sube todo a Vercel como estático. La home reescribe a `/acta.html`.
 
-## Producción (Vercel)
-Sube estos archivos (acta.html, sw.js, overlay.html, vercel.json). La home será `/acta.html`.
