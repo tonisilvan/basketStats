@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Overlay OBS</title>
+<style>
+  body{margin:0;background:transparent;color:#fff;font-family:system-ui}
+  .wrap{padding:8px 12px}
+  .title{font-size:18px;margin-bottom:6px;opacity:.8}
+  .score{font-size:64px;font-weight:900;letter-spacing:2px}
+</style>
+<div class="wrap">
+  <div id="title" class="title">—</div>
+  <div id="score" class="score">-- : --</div>
+</div>
+<script>
+async function tick(){
+  try{
+    const r = await fetch('/live.json', {cache:'no-store'});
+    if(r.ok){
+      const data = await r.json();
+      const a = (data.teams?.[0]?.players||[]).reduce((s,p)=> s+(p.PTS||0), 0);
+      const b = (data.teams?.[1]?.players||[]).reduce((s,p)=> s+(p.PTS||0), 0);
+      document.getElementById('title').textContent = data.title || '—';
+      document.getElementById('score').textContent = `${a} : ${b}`;
+    }
+  }catch(_){}
+  setTimeout(tick, 500);
+}
+tick();
+</script>
+</html>
