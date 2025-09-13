@@ -13,6 +13,8 @@
         *{box-sizing:border-box}
         html,body{height:100%}
         body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
+
+        /* ---------- VISTA PANTALLA ---------- */
         .wrap{min-height:100vh;padding:20px;display:flex;flex-direction:column;gap:18px}
         .title{font-weight:900;text-align:center;letter-spacing:.6px;font-size:clamp(20px,2.2vw,36px)}
         .board{background:rgba(18,24,33,.88);border:1px solid var(--line);border-radius:16px;overflow:hidden}
@@ -32,26 +34,78 @@
         .sumrow{font-weight:900;background:#101a25}
         .pctrow td{font-size:.95em;color:var(--muted)}
         .chip{display:inline-block;border:1px solid #2a3a4d;border-radius:999px;padding:.15em .5em;font-size:.8em;margin-left:.5em}
-        @media print{ .wrap{padding:0} .board{border:0} body{background:white;color:black} }
+
+        .toolbar{position:fixed;right:16px;top:16px;z-index:50;display:flex;gap:8px}
+        .btn{cursor:pointer;background:#183049;color:#e8eef9;border:1px solid #2e4866;padding:10px 14px;border-radius:12px;font-weight:800}
+        .btn:hover{background:#204262}
+
+        /* ---------- PLANTILLA IMPRESIÓN (PDF) ---------- */
+        #sheet{display:none}
+        #sheet .page{width:297mm; height:210mm; padding:10mm 12mm; background:white; color:#111; font-family:Arial,Helvetica,sans-serif}
+        #sheet h1{margin:0 0 4mm 0; font-size:16pt; text-align:center}
+        #meta{display:flex;justify-content:space-between; font-size:9pt; margin-bottom:3mm}
+        #legend{font-size:8pt; line-height:1.2}
+        .block{margin-top:4mm}
+        .block .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5mm}
+        .block .head .name{font-weight:800;font-size:12pt}
+        .block .head .score{font-weight:900;font-size:14pt}
+        .feb{width:100%; border-collapse:collapse; font-size:9pt}
+        .feb th,.feb td{border:0.3mm solid #333; padding:1.2mm 1mm; text-align:center}
+        .feb th.left,.feb td.left{text-align:left}
+        .shade{background:#f1f5f9}
+        .tot{font-weight:800; background:#eef2f7}
+        .pct{font-size:8pt; color:#333}
+        @page{ size:A4 landscape; margin:10mm }
+        @media print{
+          body{background:white;color:black}
+          .wrap,.toolbar{display:none !important}
+          #sheet{display:block}
+        }
     </style>
 </head>
 <body>
-<div class="wrap">
-    <div class="title">ESTADÍSTICAS TOTALES</div>
+<!-- Botón PDF -->
+<div class="toolbar">
+    <button class="btn" id="btnPDF">Guardar estadísticas (PDF)</button>
+</div>
 
+<!-- Vista pantalla (como tenías) -->
+<div class="wrap" id="screenView">
+    <div class="title">ESTADÍSTICAS TOTALES</div>
     <section id="teamA" class="board">
         <div class="teambar"><div class="teamname" id="nameA">Equipo A</div><div class="score a" id="scoreA">0</div></div>
-        <div class="scroll">
-            <table id="tableA"></table>
-        </div>
+        <div class="scroll"><table id="tableA"></table></div>
     </section>
-
     <section id="teamB" class="board">
         <div class="teambar"><div class="teamname" id="nameB">Equipo B</div><div class="score b" id="scoreB">0</div></div>
-        <div class="scroll">
-            <table id="tableB"></table>
-        </div>
+        <div class="scroll"><table id="tableB"></table></div>
     </section>
+</div>
+
+<!-- Plantilla impresión (tipo FEB) -->
+<div id="sheet">
+    <div class="page">
+        <h1>HOJA OFICIAL DE ESTADÍSTICAS</h1>
+        <div id="meta">
+            <div>Competición: <span id="m_comp">Amistoso</span><br/>Lugar: <span id="m_place">—</span></div>
+            <div>Fecha: <span id="m_date"></span><br/>Partido: <span id="m_game"></span></div>
+            <div id="legend">
+                <strong>LEYENDA</strong><br/>
+                T2/T3/TL: Metidos/Intentados (%). REB: OF/DEF/TOT. AST: Asistencias. ROB: Robos. PER: Pérdidas.<br/>
+                TAP F/C: Tapones a favor / en contra. PF: Faltas cometidas. FR: Faltas recibidas. VAL: Valoración.
+            </div>
+        </div>
+
+        <div id="blockA" class="block">
+            <div class="head"><div class="name" id="s_nameA">Equipo A</div><div class="score" id="s_scoreA">0</div></div>
+            <table class="feb" id="s_tableA"></table>
+        </div>
+
+        <div id="blockB" class="block">
+            <div class="head"><div class="name" id="s_nameB">Equipo B</div><div class="score" id="s_scoreB">0</div></div>
+            <table class="feb" id="s_tableB"></table>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -81,7 +135,7 @@
       return t;
     }
 
-    // ---------- table render ----------
+    // ---------- tabla pantalla ----------
     const HEADERS = [
       {k:'num',   label:'#', class:'num sticky'},
       {k:'name',  label:'Jugador', class:'player left sticky'},
@@ -101,100 +155,138 @@
       {k:'FD',    label:'FR'},
       {k:'VAL',   label:'VAL'}
     ];
-
-    function thead(){
-      return `<thead><tr>${
-        HEADERS.map(h=>`<th class="${h.class||''}">${h.label}</th>`).join('')
-      }</tr></thead>`;
-    }
-
-    function rowPlayer(p){
-      return `<tr>
-        <td class="sticky">${p.num||''}</td>
-        <td class="left sticky">${full(p)}</td>
-        <td>${N(p.PTS)}</td>
-        <td>${mA(p._2PM,p._2PA)}</td>
-        <td>${mA(p._3PM,p._3PA)}</td>
-        <td>${mA(p.FTM,p.FTA)}</td>
-        <td>${N(p.OREB)}</td>
-        <td>${N(p.DREB)}</td>
-        <td>${N((p.OREB||0)+(p.DREB||0))}</td>
-        <td>${N(p.AST)}</td>
-        <td>${N(p.STL)}</td>
-        <td>${N(p.TOV)}</td>
-        <td>${N(p.BLK_F)}</td>
-        <td>${N(p.BLK_A)}</td>
-        <td>${N(p.PF)}</td>
-        <td>${N(p.FD)}</td>
-        <td>${N(p.VAL)}</td>
-      </tr>`;
-    }
-
-    function rowTotals(t){
-      return `<tr class="sumrow">
-        <td class="sticky"></td>
-        <td class="left sticky">TOTAL</td>
-        <td>${t.PTS}</td>
-        <td>${mA(t._2PM,t._2PA)} <span class="chip">${pct(t._2PM,t._2PA)}</span></td>
-        <td>${mA(t._3PM,t._3PA)} <span class="chip">${pct(t._3PM,t._3PA)}</span></td>
-        <td>${mA(t.FTM,t.FTA)}   <span class="chip">${pct(t.FTM,t.FTA)}</span></td>
-        <td>${t.OREB}</td>
-        <td>${t.DREB}</td>
-        <td>${t.REB}</td>
-        <td>${t.AST}</td>
-        <td>${t.STL}</td>
-        <td>${t.TOV}</td>
-        <td>${t.BLK_F}</td>
-        <td>${t.BLK_A}</td>
-        <td>${t.PF}</td>
-        <td>${t.FD}</td>
-        <td>${t.VAL}</td>
-      </tr>`;
-    }
-
-    function rowPercentages(t){
-      return `<tr class="pctrow">
-        <td class="sticky"></td>
-        <td class="left sticky">Porcentajes</td>
-        <td></td>
-        <td>${pct(t._2PM,t._2PA)}</td>
-        <td>${pct(t._3PM,t._3PA)}</td>
-        <td>${pct(t.FTM,t.FTA)}</td>
-        <td colspan="12"></td>
-      </tr>`;
-    }
-
+    function thead(){ return `<thead><tr>${HEADERS.map(h=>`<th class="${h.class||''}">${h.label}</th>`).join('')}</tr></thead>`; }
+    function rowPlayer(p){ return `<tr>
+      <td class="sticky">${p.num||''}</td>
+      <td class="left sticky">${full(p)}</td>
+      <td>${N(p.PTS)}</td>
+      <td>${mA(p._2PM,p._2PA)}</td>
+      <td>${mA(p._3PM,p._3PA)}</td>
+      <td>${mA(p.FTM,p.FTA)}</td>
+      <td>${N(p.OREB)}</td>
+      <td>${N(p.DREB)}</td>
+      <td>${N((p.OREB||0)+(p.DREB||0))}</td>
+      <td>${N(p.AST)}</td>
+      <td>${N(p.STL)}</td>
+      <td>${N(p.TOV)}</td>
+      <td>${N(p.BLK_F)}</td>
+      <td>${N(p.BLK_A)}</td>
+      <td>${N(p.PF)}</td>
+      <td>${N(p.FD)}</td>
+      <td>${N(p.VAL)}</td>
+    </tr>`;}
+    function rowTotals(t){ return `<tr class="sumrow">
+      <td class="sticky"></td><td class="left sticky">TOTAL</td>
+      <td>${t.PTS}</td>
+      <td>${mA(t._2PM,t._2PA)} <span class="chip">${pct(t._2PM,t._2PA)}</span></td>
+      <td>${mA(t._3PM,t._3PA)} <span class="chip">${pct(t._3PM,t._3PA)}</span></td>
+      <td>${mA(t.FTM,t.FTA)}   <span class="chip">${pct(t.FTM,t.FTA)}</span></td>
+      <td>${t.OREB}</td><td>${t.DREB}</td><td>${t.REB}</td>
+      <td>${t.AST}</td><td>${t.STL}</td><td>${t.TOV}</td>
+      <td>${t.BLK_F}</td><td>${t.BLK_A}</td><td>${t.PF}</td><td>${t.FD}</td><td>${t.VAL}</td>
+    </tr>`;}
+    function rowPercentages(t){ return `<tr class="pctrow">
+      <td class="sticky"></td><td class="left sticky">Porcentajes</td>
+      <td></td><td>${pct(t._2PM,t._2PA)}</td><td>${pct(t._3PM,t._3PA)}</td><td>${pct(t.FTM,t.FTA)}</td>
+      <td colspan="12"></td>
+    </tr>`;}
     function renderTeam(tableEl, team){
       const t = computeTotals(team);
-      const head = thead();
-      const body = `<tbody>
-        ${(team.players||[]).map(rowPlayer).join('')}
-        ${rowTotals(t)}
-        ${rowPercentages(t)}
-      </tbody>`;
-      tableEl.innerHTML = head + body;
-      return t.PTS; // para el marcador
+      tableEl.innerHTML = thead() + `<tbody>${
+        (team.players||[]).map(rowPlayer).join('') + rowTotals(t) + rowPercentages(t)
+      }</tbody>`;
+      return t.PTS;
+    }
+
+    // ---------- tabla impresión tipo FEB ----------
+    function febHead(){ return `
+      <thead class="shade"><tr>
+        <th style="width:14mm">Nº</th>
+        <th class="left">Equipo • Jugadores</th>
+        <th style="width:14mm">PTS</th>
+        <th style="width:22mm">T2<br><span class="pct">(M/A %)</span></th>
+        <th style="width:22mm">T3<br><span class="pct">(M/A %)</span></th>
+        <th style="width:22mm">TL<br><span class="pct">(M/A %)</span></th>
+        <th style="width:16mm">REB OF</th>
+        <th style="width:16mm">REB DEF</th>
+        <th style="width:16mm">REB TOT</th>
+        <th style="width:14mm">AST</th>
+        <th style="width:14mm">ROB</th>
+        <th style="width:14mm">PER</th>
+        <th style="width:14mm">TAP F</th>
+        <th style="width:14mm">TAP C</th>
+        <th style="width:14mm">PF</th>
+        <th style="width:14mm">FR</th>
+        <th style="width:16mm">VAL</th>
+      </tr></thead>`;}
+    function febRow(p){ return `<tr>
+      <td>${p.num||''}</td>
+      <td class="left">${full(p)}</td>
+      <td>${N(p.PTS)}</td>
+      <td>${mA(p._2PM,p._2PA)}<br/><span class="pct">${pct(p._2PM,p._2PA)}</span></td>
+      <td>${mA(p._3PM,p._3PA)}<br/><span class="pct">${pct(p._3PM,p._3PA)}</span></td>
+      <td>${mA(p.FTM,p.FTA)}<br/><span class="pct">${pct(p.FTM,p.FTA)}</span></td>
+      <td>${N(p.OREB)}</td><td>${N(p.DREB)}</td><td>${N((p.OREB||0)+(p.DREB||0))}</td>
+      <td>${N(p.AST)}</td><td>${N(p.STL)}</td><td>${N(p.TOV)}</td>
+      <td>${N(p.BLK_F)}</td><td>${N(p.BLK_A)}</td><td>${N(p.PF)}</td><td>${N(p.FD)}</td><td>${N(p.VAL)}</td>
+    </tr>`;}
+    function febTotals(t){ return `<tr class="tot">
+      <td></td><td class="left">TOTAL</td>
+      <td>${t.PTS}</td>
+      <td>${mA(t._2PM,t._2PA)}<br/><span class="pct">${pct(t._2PM,t._2PA)}</span></td>
+      <td>${mA(t._3PM,t._3PA)}<br/><span class="pct">${pct(t._3PM,t._3PA)}</span></td>
+      <td>${mA(t.FTM,t.FTA)}<br/><span class="pct">${pct(t.FTM,t.FTA)}</span></td>
+      <td>${t.OREB}</td><td>${t.DREB}</td><td>${t.REB}</td>
+      <td>${t.AST}</td><td>${t.STL}</td><td>${t.TOV}</td>
+      <td>${t.BLK_F}</td><td>${t.BLK_A}</td><td>${t.PF}</td><td>${t.FD}</td><td>${t.VAL}</td>
+    </tr>`;}
+    function renderFEB(tableEl, team){
+      const t = computeTotals(team);
+      tableEl.innerHTML = febHead() + `<tbody>${
+        (team.players||[]).map(febRow).join('') + febTotals(t)
+      }</tbody>`;
+      return t.PTS;
     }
 
     // ---------- live loop ----------
+    let latest = {teams:[]};
     async function tick(){
       try{
         const r = await fetch('/api/live', {cache:'no-store'});
-        if(r.ok){
-          const data = await r.json();
-          const [A,B] = data.teams||[];
-          document.getElementById('nameA').textContent = A?.name || 'Equipo 1';
-          document.getElementById('nameB').textContent = B?.name || 'Equipo 2';
-
-          const scoreA = renderTeam(document.getElementById('tableA'), A||{players:[]});
-          const scoreB = renderTeam(document.getElementById('tableB'), B||{players:[]});
-
-          document.getElementById('scoreA').textContent = scoreA;
-          document.getElementById('scoreB').textContent = scoreB;
-        }
-      }catch(e){ /* silenciar */ }
+        if(r.ok){ latest = await r.json(); drawScreen(); }
+      }catch(e){}
       setTimeout(tick, 800);
     }
+    function drawScreen(){
+      const [A,B] = latest.teams||[];
+      document.getElementById('nameA').textContent = A?.name || 'Equipo 1';
+      document.getElementById('nameB').textContent = B?.name || 'Equipo 2';
+      const scoreA = renderTeam(document.getElementById('tableA'), A||{players:[]});
+      const scoreB = renderTeam(document.getElementById('tableB'), B||{players:[]});
+      document.getElementById('scoreA').textContent = scoreA;
+      document.getElementById('scoreB').textContent = scoreB;
+    }
+
+    // ---------- PDF (print) ----------
+    function fillSheet(){
+      const [A,B] = latest.teams||[];
+      // cabecera meta
+      document.getElementById('m_date').textContent = new Date().toLocaleString();
+      document.getElementById('m_game').textContent = (A?.name||'Equipo 1') + ' vs ' + (B?.name||'Equipo 2');
+      // bloques
+      document.getElementById('s_nameA').textContent = A?.name || 'Equipo 1';
+      document.getElementById('s_nameB').textContent = B?.name || 'Equipo 2';
+      const sa = renderFEB(document.getElementById('s_tableA'), A||{players:[]});
+      const sb = renderFEB(document.getElementById('s_tableB'), B||{players:[]});
+      document.getElementById('s_scoreA').textContent = sa;
+      document.getElementById('s_scoreB').textContent = sb;
+    }
+    document.getElementById('btnPDF').addEventListener('click', ()=>{
+      fillSheet();
+      // lanza diálogo del navegador: "Guardar como PDF"
+      window.print();
+    });
+
     tick();
 </script>
 </body>
