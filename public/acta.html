@@ -1,400 +1,293 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Acta rápida — 2 equipos (v3 plantillas/)</title>
-<style>
-  :root{
-    --bg:#0b0f14;--panel:#121821;--ink:#e8eef9;--muted:#9bb0c9;--line:#223046;
-    --ok:#10b981;--bad:#ef4444;--chip:#0a0f15;--btn:#15202b;--btn-h:#1b2a3a;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;background:linear-gradient(180deg,#0b0f14,#0f1620);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial}
-  header.top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);background:#0d131b}
-  #titleText{font-size:18px;font-weight:800}
-  .toolbar{display:flex;gap:10px;align-items:center}
-  button{cursor:pointer;border:1px solid #2a3a4d;background:var(--btn);color:var(--ink);padding:8px 12px;border-radius:10px;font-weight:600}
-  button:hover{background:var(--btn-h)}
-  .badge{font-size:12px;color:#9fb4d1}
-  .badge.ok{color:#2dd4bf}
-  .badge.err{color:#ef4444}
-  .layout{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;flex-direction:column}
-  .team-header{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--line)}
-  .left{display:flex;align-items:center;gap:12px}
-  .team-title{display:flex;flex-direction:column}
-  .team-title input{background:transparent;border:1px solid #2a3a4d;border-radius:8px;padding:4px 6px;color:var(--ink);font-weight:600;min-width:140px}
-  .ctrls{display:flex;gap:8px;align-items:center}
-  select{background:#0d1520;border:1px solid #2a3a4d;border-radius:10px;color:var(--ink);padding:6px 8px}
-  .score-badge{width:56px;height:56px;border-radius:12px;background:#e5eef9;color:#0b0f14;display:grid;place-items:center;font-weight:900;font-size:22px}
-  .table-wrap{max-height:70vh;overflow:auto}
-  table{width:100%;border-collapse:separate;border-spacing:0}
-  thead th{position:sticky;top:0;background:#0f1620;border-bottom:1px solid var(--line);z-index:10}
-  th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;font-variant-numeric:tabular-nums;vertical-align:top}
-  tbody tr:nth-child(2n-1){background:#0f141c}
-  tbody tr:nth-child(2n){background:#131b27}
-  .sticky-name{position:sticky;left:0;background:inherit;z-index:11;text-align:left}
-  .num{width:110px}
-  .smallnote{font-size:11px;color:var(--muted);display:block;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  input.small{width:48px;text-align:center;background:#0d1520;border:1px solid #2a3a4d;border-radius:8px;color:var(--ink);padding:4px 4px}
-  input.small:disabled{opacity:.6}
-  .rowpair{display:flex;gap:8px;align-items:flex-start;justify-content:center}
-  .colstack{display:flex;flex-direction:column;gap:2px;align-items:center}
-  .mini{padding:2px 6px;border-radius:8px;border:1px solid #2a3a4d;background:#0e1620;font-size:12px}
-  .mini.good{background:#0e231a;border-color:#1f8b52}
-  .mini.bad{background:#261313;border-color:#a33c3c}
-  .mini.plus{background:#0f1a27;border-color:#355a8b}
-  .sepL{border-left:1px solid var(--line)}
-  th.sepL{box-shadow: inset 1px 0 0 var(--line)}
-  @media (max-width:1100px){ .layout{grid-template-columns:1fr} }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Estadísticas totales</title>
+  <style>
+    :root{
+      --bg:transparent; --ink:#e8eef9; --muted:#9bb0c9;
+      --panel:#0f1620; --head:#141e2b; --line:#253445;
+      --a:#6bd3ff; --b:#ffba5c;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
+
+    /* ---------- VISTA PANTALLA ---------- */
+    .wrap{min-height:100vh;padding:20px;display:flex;flex-direction:column;gap:18px}
+    .title{font-weight:900;text-align:center;letter-spacing:.6px;font-size:clamp(20px,2.2vw,36px)}
+    .board{background:rgba(18,24,33,.88);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+    .teambar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--head);border-bottom:1px solid var(--line)}
+    .teamname{font-weight:900;font-size:clamp(16px,1.8vw,28px)}
+    .score{font-weight:900;font-size:clamp(16px,1.8vw,28px)}
+    .score.a{color:var(--a)} .score.b{color:var(--b)}
+    .scroll{overflow:auto;max-height:72vh}
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    thead th{position:sticky;top:0;background:var(--head);z-index:2}
+    th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;font-variant-numeric:tabular-nums}
+    tbody tr:nth-child(2n){background:#0f141d}
+    th.left,td.left{text-align:left}
+    th.sticky,td.sticky{position:sticky;left:0;background:inherit;z-index:1}
+    .num{width:48px}
+    .player{min-width:210px}
+    .sumrow{font-weight:900;background:#101a25}
+    .pctrow td{font-size:.95em;color:var(--muted)}
+    .chip{display:inline-block;border:1px solid #2a3a4d;border-radius:999px;padding:.15em .5em;font-size:.8em;margin-left:.5em}
+
+    .toolbar{position:fixed;right:16px;top:16px;z-index:50;display:flex;gap:8px}
+    .btn{cursor:pointer;background:#183049;color:#e8eef9;border:1px solid #2e4866;padding:10px 14px;border-radius:12px;font-weight:800}
+    .btn:hover{background:#204262}
+
+    /* ---------- PLANTILLA IMPRESIÓN (PDF) ---------- */
+    #sheet{display:none}
+    #sheet .page{width:297mm; height:210mm; padding:10mm 12mm; background:white; color:#111; font-family:Arial,Helvetica,sans-serif}
+    #sheet h1{margin:0 0 4mm 0; font-size:16pt; text-align:center}
+    #meta{display:flex;justify-content:space-between; font-size:9pt; margin-bottom:3mm}
+    #legend{font-size:8pt; line-height:1.2}
+    .block{margin-top:4mm}
+    .block .head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:1.5mm}
+    .block .head .name{font-weight:800;font-size:12pt}
+    .block .head .score{font-weight:900;font-size:14pt}
+    .feb{width:100%; border-collapse:collapse; font-size:9pt}
+    .feb th,.feb td{border:0.3mm solid #333; padding:1.2mm 1mm; text-align:center}
+    .feb th.left,.feb td.left{text-align:left}
+    .shade{background:#f1f5f9}
+    .tot{font-weight:800; background:#eef2f7}
+    .pct{font-size:8pt; color:#333}
+    @page{ size:A4 landscape; margin:10mm }
+    @media print{
+      body{background:white;color:black}
+      .wrap,.toolbar{display:none !important}
+      #sheet{display:block}
+    }
+  </style>
 </head>
 <body>
-  <header class="top">
-    <h1 id="title"><span id="titleText">Cargar plantillas (2)</span> <span id="loadedCounter" style="font-size:12px;color:#9fb4d1;margin-left:8px">(0/2)</span></h1>
-    <div class="toolbar">
-      <button id="nuevo">Nuevo partido</button>
-      <span id="autosaveBadge" class="badge">Autoguardado</span>
+<!-- Botón PDF -->
+<div class="toolbar">
+  <button class="btn" id="btnPDF">Guardar estadísticas (PDF)</button>
+</div>
+
+<!-- Vista pantalla (como tenías) -->
+<div class="wrap" id="screenView">
+  <div class="title">ESTADÍSTICAS TOTALES</div>
+  <section id="teamA" class="board">
+    <div class="teambar"><div class="teamname" id="nameA">Equipo A</div><div class="score a" id="scoreA">0</div></div>
+    <div class="scroll"><table id="tableA"></table></div>
+  </section>
+  <section id="teamB" class="board">
+    <div class="teambar"><div class="teamname" id="nameB">Equipo B</div><div class="score b" id="scoreB">0</div></div>
+    <div class="scroll"><table id="tableB"></table></div>
+  </section>
+</div>
+
+<!-- Plantilla impresión (tipo FEB) -->
+<div id="sheet">
+  <div class="page">
+    <h1>HOJA OFICIAL DE ESTADÍSTICAS</h1>
+    <div id="meta">
+      <div>Competición: <span id="m_comp">Amistoso</span><br/>Lugar: <span id="m_place">—</span></div>
+      <div>Fecha: <span id="m_date"></span><br/>Partido: <span id="m_game"></span></div>
+      <div id="legend">
+        <strong>LEYENDA</strong><br/>
+        T2/T3/TL: Metidos/Intentados (%). REB: OF/DEF/TOT. AST: Asistencias. ROB: Robos. PER: Pérdidas.<br/>
+        TAP F/C: Tapones a favor / en contra. PF: Faltas cometidas. FR: Faltas recibidas. VAL: Valoración.
+      </div>
     </div>
-  </header>
 
-  <main class="layout" id="layout"></main>
+    <div id="blockA" class="block">
+      <div class="head"><div class="name" id="s_nameA">Equipo A</div><div class="score" id="s_scoreA">0</div></div>
+      <table class="feb" id="s_tableA"></table>
+    </div>
 
-  <script>
-    // (Next.js) sin SW: usamos la API /api/live
-    async function pushToSW(){ /* noop */ }
-    function exportJson(){
-        return { title: app.matchName || '', teams: state.teams.map(t => ({
-            name: t.name, coach: t.coach,
-            points: t.players.reduce((s,p)=> s + (p.PTS||0), 0),
-            players: t.players
-          })),
-          updatedAt: Date.now()
-        };
-      }
+    <div id="blockB" class="block">
+      <div class="head"><div class="name" id="s_nameB">Equipo B</div><div class="score" id="s_scoreB">0</div></div>
+      <table class="feb" id="s_tableB"></table>
+    </div>
+  </div>
+</div>
 
-      // ---------- Datos ----------
-      const EMPTY_PLAYER = ()=>({num:'',first:'',last:'',_2PA:0,_2PM:0,_3PA:0,_3PM:0,FTA:0,FTM:0,OREB:0,DREB:0,REB:0,AST:0,STL:0,TOV:0,BLK_F:0,BLK_A:0,PF:0,FD:0,FGM:0,FGA:0,PTS:0,VAL:0});
-      const makeTeam = (name='Equipo')=>({name,coach:'',logo:'',loaded:false,players:Array.from({length:12}, EMPTY_PLAYER)});
-      let state = { teams:[ makeTeam('Equipo 1'), makeTeam('Equipo 2') ] };
-      let app = { ready:false, matchName:'', saveTimer:null };
-      let plantillaList = [];
+<script>
+  // ---------- helpers ----------
+  const N = v => (v==null||v==='')?0:Number(v);
+  const pct=(m,a)=> a>0 ? (100*N(m)/N(a)).toFixed(1)+'%' : '—';
+  const full = p => [p.first||'',p.last||''].join(' ').trim() || ('#'+(p.num||''));
+  const mA = (m,a)=> `${N(m)}/${N(a)}`;
 
-      const COLS = [
-        {key:'id',label:'#',type:'id',sticky:true},
-        {key:'T2',label:'T2',title:'Tiros de 2',block:'shoot',a:'_2PA',m:'_2PM'},
-        {key:'T3',label:'T3',title:'Tiros de 3',block:'shoot',a:'_3PA',m:'_3PM', sepL:true},
-        {key:'TL',label:'TL',title:'Tiros libres',block:'shoot',a:'FTA',m:'FTM', sepL:true},
-        {key:'REB',label:'REB',title:'Rebotes (OF/DEF)',block:'pair-input',a:'OREB',m:'DREB', sepL:true},
-        {key:'AST',label:'AST',title:'Asistencias',type:'input-plus', sepL:true},
-        {key:'STL',label:'RBO',title:'Robos de balón',type:'input-plus'},
-        {key:'TOV',label:'PER',title:'Pérdidas',type:'input-plus'},
-        {key:'TAP',label:'TAP',title:'Tapones (a favor / en contra)',block:'pair-input-no-buttons',a:'BLK_F',m:'BLK_A', sepL:true},
-        {key:'PF',label:'FALTAS',title:'Faltas en contra',type:'input-plus', sepL:true},
-        {key:'FD',label:'',title:'Faltas recibidas',type:'input-plus'},
-        {key:'PTS',label:'PTS',title:'Puntos',type:'calc-bold', sepL:true}
-      ];
+  function computeTotals(team){
+    const t = {
+      PTS:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0, FTM:0,FTA:0,
+      OREB:0,DREB:0, REB:0, AST:0, STL:0, TOV:0, BLK_F:0, BLK_A:0, PF:0, FD:0, VAL:0
+    };
+    (team.players||[]).forEach(p=>{
+      t.PTS   += N(p.PTS);
+      t._2PM  += N(p._2PM);  t._2PA += N(p._2PA);
+      t._3PM  += N(p._3PM);  t._3PA += N(p._3PA);
+      t.FTM   += N(p.FTM);   t.FTA  += N(p.FTA);
+      t.OREB  += N(p.OREB);  t.DREB += N(p.DREB);
+      t.AST   += N(p.AST);   t.STL  += N(p.STL); t.TOV += N(p.TOV);
+      t.BLK_F += N(p.BLK_F); t.BLK_A+= N(p.BLK_A);
+      t.PF    += N(p.PF);    t.FD   += N(p.FD);
+      t.VAL   += N(p.VAL);
+    });
+    t.REB = t.OREB + t.DREB;
+    return t;
+  }
 
-      const $ = (s,r=document)=>r.querySelector(s);
-      const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+  // ---------- tabla pantalla ----------
+  const HEADERS = [
+    {k:'num',   label:'#', class:'num sticky'},
+    {k:'name',  label:'Jugador', class:'player left sticky'},
+    {k:'PTS',   label:'PTS'},
+    {k:'T2',    label:'T2 M/A'},
+    {k:'T3',    label:'T3 M/A'},
+    {k:'TL',    label:'TL M/A'},
+    {k:'OREB',  label:'REB OF'},
+    {k:'DREB',  label:'REB DEF'},
+    {k:'REB',   label:'REB TOT'},
+    {k:'AST',   label:'AST'},
+    {k:'STL',   label:'ROB'},
+    {k:'TOV',   label:'PER'},
+    {k:'BLK_F', label:'TAP F'},
+    {k:'BLK_A', label:'TAP C'},
+    {k:'PF',    label:'PF'},
+    {k:'FD',    label:'FR'},
+    {k:'VAL',   label:'VAL'}
+  ];
+  function thead(){ return `<thead><tr>${HEADERS.map(h=>`<th class="${h.class||''}">${h.label}</th>`).join('')}</tr></thead>`; }
+  function rowPlayer(p){ return `<tr>
+    <td class="sticky">${p.num||''}</td>
+    <td class="left sticky">${full(p)}</td>
+    <td>${N(p.PTS)}</td>
+    <td>${mA(p._2PM,p._2PA)}</td>
+    <td>${mA(p._3PM,p._3PA)}</td>
+    <td>${mA(p.FTM,p.FTA)}</td>
+    <td>${N(p.OREB)}</td>
+    <td>${N(p.DREB)}</td>
+    <td>${N((p.OREB||0)+(p.DREB||0))}</td>
+    <td>${N(p.AST)}</td>
+    <td>${N(p.STL)}</td>
+    <td>${N(p.TOV)}</td>
+    <td>${N(p.BLK_F)}</td>
+    <td>${N(p.BLK_A)}</td>
+    <td>${N(p.PF)}</td>
+    <td>${N(p.FD)}</td>
+    <td>${N(p.VAL)}</td>
+  </tr>`;}
+  function rowTotals(t){ return `<tr class="sumrow">
+    <td class="sticky"></td><td class="left sticky">TOTAL</td>
+    <td>${t.PTS}</td>
+    <td>${mA(t._2PM,t._2PA)} <span class="chip">${pct(t._2PM,t._2PA)}</span></td>
+    <td>${mA(t._3PM,t._3PA)} <span class="chip">${pct(t._3PM,t._3PA)}</span></td>
+    <td>${mA(t.FTM,t.FTA)}   <span class="chip">${pct(t.FTM,t.FTA)}</span></td>
+    <td>${t.OREB}</td><td>${t.DREB}</td><td>${t.REB}</td>
+    <td>${t.AST}</td><td>${t.STL}</td><td>${t.TOV}</td>
+    <td>${t.BLK_F}</td><td>${t.BLK_A}</td><td>${t.PF}</td><td>${t.FD}</td><td>${t.VAL}</td>
+  </tr>`;}
+  function rowPercentages(t){ return `<tr class="pctrow">
+    <td class="sticky"></td><td class="left sticky">Porcentajes</td>
+    <td></td><td>${pct(t._2PM,t._2PA)}</td><td>${pct(t._3PM,t._3PA)}</td><td>${pct(t.FTM,t.FTA)}</td>
+    <td colspan="12"></td>
+  </tr>`;}
+  function renderTeam(tableEl, team){
+    const t = computeTotals(team);
+    tableEl.innerHTML = thead() + `<tbody>${
+      (team.players||[]).map(rowPlayer).join('') + rowTotals(t) + rowPercentages(t)
+    }</tbody>`;
+    return t.PTS;
+  }
 
-      async function loadIndex(){
-        try{
-          const r = await fetch('./plantillas/index.json', {cache:'no-store'});
-          const j = await r.json();
-          plantillaList = (j.files||[]).map(f=>({ name:f, file:`./plantillas/${f}.csv` }));
-        }catch(e){ console.error('No se pudo leer plantillas/index.json', e); plantillaList=[]; }
-      }
+  // ---------- tabla impresión tipo FEB ----------
+  function febHead(){ return `
+    <thead class="shade"><tr>
+      <th style="width:14mm">Nº</th>
+      <th class="left">Equipo • Jugadores</th>
+      <th style="width:14mm">PTS</th>
+      <th style="width:22mm">T2<br><span class="pct">(M/A %)</span></th>
+      <th style="width:22mm">T3<br><span class="pct">(M/A %)</span></th>
+      <th style="width:22mm">TL<br><span class="pct">(M/A %)</span></th>
+      <th style="width:16mm">REB OF</th>
+      <th style="width:16mm">REB DEF</th>
+      <th style="width:16mm">REB TOT</th>
+      <th style="width:14mm">AST</th>
+      <th style="width:14mm">ROB</th>
+      <th style="width:14mm">PER</th>
+      <th style="width:14mm">TAP F</th>
+      <th style="width:14mm">TAP C</th>
+      <th style="width:14mm">PF</th>
+      <th style="width:14mm">FR</th>
+      <th style="width:16mm">VAL</th>
+    </tr></thead>`;}
+  function febRow(p){ return `<tr>
+    <td>${p.num||''}</td>
+    <td class="left">${full(p)}</td>
+    <td>${N(p.PTS)}</td>
+    <td>${mA(p._2PM,p._2PA)}<br/><span class="pct">${pct(p._2PM,p._2PA)}</span></td>
+    <td>${mA(p._3PM,p._3PA)}<br/><span class="pct">${pct(p._3PM,p._3PA)}</span></td>
+    <td>${mA(p.FTM,p.FTA)}<br/><span class="pct">${pct(p.FTM,p.FTA)}</span></td>
+    <td>${N(p.OREB)}</td><td>${N(p.DREB)}</td><td>${N((p.OREB||0)+(p.DREB||0))}</td>
+    <td>${N(p.AST)}</td><td>${N(p.STL)}</td><td>${N(p.TOV)}</td>
+    <td>${N(p.BLK_F)}</td><td>${N(p.BLK_A)}</td><td>${N(p.PF)}</td><td>${N(p.FD)}</td><td>${N(p.VAL)}</td>
+  </tr>`;}
+  function febTotals(t){ return `<tr class="tot">
+    <td></td><td class="left">TOTAL</td>
+    <td>${t.PTS}</td>
+    <td>${mA(t._2PM,t._2PA)}<br/><span class="pct">${pct(t._2PM,t._2PA)}</span></td>
+    <td>${mA(t._3PM,t._3PA)}<br/><span class="pct">${pct(t._3PM,t._3PA)}</span></td>
+    <td>${mA(t.FTM,t.FTA)}<br/><span class="pct">${pct(t.FTM,t.FTA)}</span></td>
+    <td>${t.OREB}</td><td>${t.DREB}</td><td>${t.REB}</td>
+    <td>${t.AST}</td><td>${t.STL}</td><td>${t.TOV}</td>
+    <td>${t.BLK_F}</td><td>${t.BLK_A}</td><td>${t.PF}</td><td>${t.FD}</td><td>${t.VAL}</td>
+  </tr>`;}
+  function renderFEB(tableEl, team){
+    const t = computeTotals(team);
+    tableEl.innerHTML = febHead() + `<tbody>${
+      (team.players||[]).map(febRow).join('') + febTotals(t)
+    }</tbody>`;
+    return t.PTS;
+  }
 
-      // ---------- Render ----------
-      function render(){
-        const root = $('#layout'); root.innerHTML='';
-        state.teams.forEach((team, ti)=>{
-          const panel = document.createElement('section'); panel.className='panel';
-          const options = plantillaList.map(p=>`<option value="${p.file}">${p.name}</option>`).join('');
-          panel.innerHTML = `
-            <div class="team-header">
-              <div class="left">
-                <div class="team-title">
-                  <input value="${team.name}" data-action="teamName" data-team="${ti}" />
-                  <div class="smallnote">Coach:</div>
-                  <input value="${team.coach||''}" data-action="coach" data-team="${ti}">
-                </div>
-                <div class="ctrls">
-                  <select data-action="pick" data-team="${ti}">
-                    <option value="">— Selecciona plantilla —</option>
-                    ${options}
-                  </select>
-                  <button data-action="load" data-team="${ti}">Cargar</button>
-                  <span class="smallnote" id="s_${ti}">${team.loaded?'✔ cargada':''}</span>
-                </div>
-              </div>
-              <div class="score-badge"><span id="teamPTS_${ti}">0</span></div>
-            </div>
-            <div class="table-wrap" data-lock="lock">
-              ${table(team, ti)}
-            </div>`;
-          root.appendChild(panel);
-        });
-        bindEvents();
-        recalcAll();
-        applyLock();
-        updateTitleFromTeams();
-      }
+  // ---------- live loop ----------
+  let latest = {teams:[]};
+  async function tick(){
+    try{
+      const r = await fetch('/api/live', {cache:'no-store'});
+      if(r.ok){ latest = await r.json(); drawScreen(); }
+    }catch(e){}
+    setTimeout(tick, 800);
+  }
+  function drawScreen(){
+    const [A,B] = latest.teams||[];
+    document.getElementById('nameA').textContent = A?.name || 'Equipo 1';
+    document.getElementById('nameB').textContent = B?.name || 'Equipo 2';
+    const scoreA = renderTeam(document.getElementById('tableA'), A||{players:[]});
+    const scoreB = renderTeam(document.getElementById('tableB'), B||{players:[]});
+    document.getElementById('scoreA').textContent = scoreA;
+    document.getElementById('scoreB').textContent = scoreB;
+  }
 
-      function th(c){
-        const help = c.title?` title="${c.title}"`:'';
-        const extra = c.sepL?' sepL':'';
-        const sticky = c.type==='id'?' sticky-name':'';
-        return `<th class="${sticky}${extra}"${help}>${c.label}</th>`;
-      }
-      function table(team, ti){
-        const head = `<thead><tr>${COLS.map(th).join('')}</tr></thead>`;
-        const body = `<tbody>${ team.players.map((p,pi)=> row(ti,pi,p)).join('') }</tbody>`;
-        return `<table>${head}${body}</table>`;
-      }
-      function row(ti,pi,p){
-        const id = (k)=>`t${ti}p${pi}_${k}`;
-        let tds='';
-        COLS.forEach(col=>{
-          if(col.type==='id'){
-            tds += `<td class="sticky-name num">
-              <div class="colstack" style="align-items:flex-start">
-                <input class="small" value="${esc(p.num||'')}" data-action="edit" data-team="${ti}" data-player="${pi}" data-field="num" placeholder="#">
-                <span class="smallnote">${esc(p.first||'')}</span>
-                <span class="smallnote">${esc(p.last||'')}</span>
-              </div>
-            </td>`; return;
-          }
-          if(col.block==='shoot'){
-            const a=col.a, m=col.m;
-            tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
-              <div class="rowpair">
-                <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
-                <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
-              </div>
-              <div class="rowpair" style="margin-top:4px">
-                <button class="mini good" data-action="hit" data-team="${ti}" data-player="${pi}" data-a="${a}" data-m="${m}">✓</button>
-                <button class="mini bad" data-action="miss" data-team="${ti}" data-player="${pi}" data-a="${a}" data-m="${m}">✗</button>
-              </div>
-            </td>`; return;
-          }
-          if(col.block==='pair-input'){
-            const a=col.a, m=col.m;
-            tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
-              <div class="rowpair">
-                <div class="colstack">
-                  <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
-                  <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${a}">OFF</button>
-                </div>
-                <div class="colstack">
-                  <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
-                  <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${m}">DEF</button>
-                </div>
-              </div>
-            </td>`; return;
-          }
-          if(col.block==='pair-input-no-buttons'){
-            const a=col.a, m=col.m;
-            tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
-              <div class="rowpair">
-                <div class="colstack">
-                  <input class="small" type="number" min="0" max="99" value="${p[a]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${a}">
-                  <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${a}">AF</button>
-                </div>
-                <div class="colstack">
-                  <input class="small" type="number" min="0" max="99" value="${p[m]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${m}">
-                  <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${m}">AC</button>
-                </div>
-              </div>
-            </td>`; return;
-          }
-          if(col.type==='input-plus'){
-            tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}>
-              <div class="colstack">
-                <input class="small" type="number" min="0" max="99" value="${p[col.key]||0}" data-action="set" data-team="${ti}" data-player="${pi}" data-field="${col.key}">
-                <button class="mini plus" data-action="plus" data-team="${ti}" data-player="${pi}" data-key="${col.key}">${col.key==='PF'?'CONT':(col.key==='FD'?'FAV':'+1')}</button>
-              </div>
-            </td>`; return;
-          }
-          if(col.type==='calc-bold'){
-            tds += `<td${col.sepL?' class="sepL"':''}${col.title?` title="${col.title}"`:''}><span id="${id(col.key)}">${n(p[col.key])}</span></td>`; return;
-          }
-        });
-        return `<tr>${tds}</tr>`;
-      }
+  // ---------- PDF (print) ----------
+  function fillSheet(){
+    const [A,B] = latest.teams||[];
+    // cabecera meta
+    document.getElementById('m_date').textContent = new Date().toLocaleString();
+    document.getElementById('m_game').textContent = (A?.name||'Equipo 1') + ' vs ' + (B?.name||'Equipo 2');
+    // bloques
+    document.getElementById('s_nameA').textContent = A?.name || 'Equipo 1';
+    document.getElementById('s_nameB').textContent = B?.name || 'Equipo 2';
+    const sa = renderFEB(document.getElementById('s_tableA'), A||{players:[]});
+    const sb = renderFEB(document.getElementById('s_tableB'), B||{players:[]});
+    document.getElementById('s_scoreA').textContent = sa;
+    document.getElementById('s_scoreB').textContent = sb;
+  }
+  document.getElementById('btnPDF').addEventListener('click', ()=>{
+    fillSheet();
+    // lanza diálogo del navegador: "Guardar como PDF"
+    window.print();
+  });
 
-      // ---------- Eventos ----------
-      function bindEvents(){
-        // botones
-        $('#nuevo').onclick = ()=>{ state={teams:[makeTeam('Equipo 1'), makeTeam('Equipo 2')]}; app.matchName=''; render(); autosaveNow(); };
-
-        // selects + botón cargar
-        $$('button[data-action="load"]').forEach(b=> b.onclick = async (e)=>{
-          const ti = +e.target.dataset.team;
-          const sel = document.querySelector(`select[data-action="pick"][data-team="${ti}"]`);
-          const file = sel.value; if(!file){ alert('Selecciona una plantilla'); return; }
-          try{
-            const text = await (await fetch(file, {cache:'no-store'})).text();
-            importRosterCSV(ti, text, {filename:file.split('/').pop()});
-            state.teams[ti].loaded = true;
-            const flag = document.getElementById(`s_${ti}`); if(flag) flag.textContent = '✔ cargada';
-            render(); scheduleAutoSave();
-          }catch(err){ alert('No se pudo cargar la plantilla: '+file); }
-        });
-
-        // team meta
-        $$('input[data-action="teamName"]').forEach(i=> i.addEventListener('input', e=>{ state.teams[+e.target.dataset.team].name = e.target.value; updateTitleFromTeams(); scheduleAutoSave(); }));
-        $$('input[data-action="coach"]').forEach(i=> i.addEventListener('input', e=>{ state.teams[+e.target.dataset.team].coach = e.target.value; scheduleAutoSave(); }));
-
-        // player edits
-        $$('input[data-action="edit"]').forEach(inp=> inp.addEventListener('input', e=>{ if(!app.ready){ tip(); return; } const {team,player,field}=e.target.dataset; state.teams[+team].players[+player][field]=e.target.value; scheduleAutoSave(); }));
-        $$('input[data-action="set"]').forEach(inp=> inp.addEventListener('change', e=>{
-          if(!app.ready){ tip(); return; }
-          const ti=+e.target.dataset.team, pi=+e.target.dataset.player, field=e.target.dataset.field;
-          let v=Math.max(0, Math.min(99, parseInt(e.target.value||'0',10))); const pl=state.teams[ti].players[pi];
-          pl[field]=v; clampMade(pl); recalcAll(); scheduleAutoSave();
-        }));
-        $$('.mini.good').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, a=e.target.dataset.a, m=e.target.dataset.m; bump(ti,pi,a,1); bump(ti,pi,m,1); clampMade(state.teams[ti].players[pi]); syncInputs(ti,pi,[a,m]); recalcAll(); scheduleAutoSave(); }));
-        $$('.mini.bad').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, a=e.target.dataset.a; bump(ti,pi,a,1); clampMade(state.teams[ti].players[pi]); syncInputs(ti,pi,[a]); recalcAll(); scheduleAutoSave(); }));
-        $$('.mini.plus').forEach(btn=> btn.addEventListener('click', e=>{ if(!app.ready){ tip(); return; } const ti=+e.target.dataset.team, pi=+e.target.dataset.player, key=e.target.dataset.key; bump(ti,pi,key,1); syncInputs(ti,pi,[key]); recalcAll(); scheduleAutoSave(); }));
-      }
-
-      function tip(){ alert('Configura antes de empezar: carga las dos plantillas (Equipo 1 y Equipo 2).'); }
-
-      // ---------- Cálculos ----------
-      function clampMade(pl){ pl._2PM=Math.min(pl._2PM||0, pl._2PA||0); pl._3PM=Math.min(pl._3PM||0, pl._3PA||0); pl.FTM=Math.min(pl.FTM||0, pl.FTA||0); }
-      function bump(ti,pi,key,by){ const pl=state.teams[ti].players[pi]; pl[key]=(pl[key]||0)+by; if(pl[key]>99) pl[key]=99; }
-
-      function elInput(ti,pi,field){ return document.querySelector(`input[data-team="${ti}"][data-player="${pi}"][data-field="${field}"]`); }
-      function syncInputs(ti,pi,fields){
-        const pl = state.teams[ti].players[pi];
-        fields.forEach(f=>{ const el = elInput(ti,pi,f); if(el){ el.value = pl[f]??0; } });
-      }
-
-      function recalcAll(){
-        state.teams.forEach((team,ti)=>{
-          let tpts=0;
-          team.players.forEach((pl,pi)=>{
-            pl.FGA=(pl._2PA||0)+(pl._3PA||0);
-            pl.FGM=(pl._2PM||0)+(pl._3PM||0);
-            pl.REB=(pl.OREB||0)+(pl.DREB||0);
-            pl.PTS=(pl._2PM||0)*2+(pl._3PM||0)*3+(pl.FTM||0);
-            const missFG=(pl.FGA||0)-(pl.FGM||0); const missFT=(pl.FTA||0)-(pl.FTM||0);
-            pl.VAL=(pl.PTS||0)+(pl.REB||0)+(pl.AST||0)+(pl.STL||0)+(pl.BLK_F||0)+(pl.FD||0)-missFG-missFT-(pl.TOV||0)-(pl.BLK_A||0)-(pl.PF||0);
-            tpts+=pl.PTS||0;
-            ['PTS','AST','STL','TOV','BLK_F','BLK_A','PF','FD'].forEach(k=>{ const el=$(`#t${ti}p${pi}_${k}`); if(el) el.textContent=n(pl[k]); });
-          });
-          const cap=$(`#teamPTS_${ti}`); if(cap) cap.textContent=tpts;
-        });
-      }
-
-      // ---------- Bloqueo + Título ----------
-      function applyLock(){
-        const loadedCount = (state.teams[0].loaded?1:0) + (state.teams[1].loaded?1:0);
-        app.ready = loadedCount===2;
-        const lockables = $$('[data-lock="lock"] input, [data-lock="lock"] button');
-        lockables.forEach(el=> el.disabled = !app.ready);
-        const lc = document.getElementById('loadedCounter'); if(lc){ lc.textContent = `(${loadedCount}/2)`; }
-      }
-      function updateTitleFromTeams(){
-        if(state.teams[0].loaded && state.teams[1].loaded){
-          app.matchName = `${state.teams[0].name} vs ${state.teams[1].name}`;
-          const t = $('#titleText'); if(t) t.textContent = app.matchName;
-        } else {
-          const t = $('#titleText'); if(t) t.textContent = 'Cargar plantillas (2)';
-        }
-      }
-
-      // ---------- CSV / import ----------
-      function parseCSV(text){
-        const sep = text.includes(';')?';':',';
-        const lines = text.split(/\r?\n/).filter(l=>l.trim().length);
-        if(!lines.length) return [];
-        const headers = lines[0].split(sep).map(h=>h.trim());
-        return lines.slice(1).map(line=>{
-          const parts=line.split(sep); const o={};
-          headers.forEach((h,i)=> o[h]= (parts[i]??'').trim()); return o;
-        });
-      }
-      function importRosterCSV(ti, text, opts={}){
-        const norm = s=> (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
-        const rows = parseCSV(text);
-        const nrows = rows.map(r=>{ const o={}; Object.keys(r).forEach(k=> o[norm(k)] = r[k]); return o; });
-        const players = nrows.filter(r=> norm(r['type'])==='player');
-        let list=[];
-        if(players.length){
-          list = players.map(r=>({ num:(r['num']||r['numero']||r['#']||'')+'', first:(r['first']||r['nombre']||r['name']||r['jugador']||'')+'', last:(r['last']||r['apellidos']||r['apellido']||'')+'', nick:(r['nick']||r['mote']||r['apodo']||'')+'' })).slice(0,12);
-        } else if(nrows.length){
-          const keys = Object.keys(nrows[0]);
-          const kNum = keys.find(k=>/^(num|numero|dorsal|#)$/.test(k));
-          const kFirst = keys.find(k=>/^(first|nombre|name|jugador)$/.test(k));
-          const kLast  = keys.find(k=>/^(last|apellidos|apellido)$/.test(k));
-          const kNick  = keys.find(k=>/^(nick|mote|apodo)$/.test(k));
-          if(kNum){
-            list = nrows.slice(0,12).map(r=>{
-              let first = r[kFirst]||''; let last=r[kLast]||'';
-              if(first && !last && /jugador/.test(kFirst||'')){ const parts=String(first).split(' '); first=parts[0]||''; last=parts.slice(1).join(' '); }
-              if(!first && !last && kNick){ first=r[kNick]||''; }
-              return { num:r[kNum]||'', first:first||'', last:last||'' };
-            });
-          }
-        }
-        if(list.length){
-          state.teams[ti].players = Array.from({length:12}, (_,i)=>{
-            const base=EMPTY_PLAYER();
-            if(list[i]){
-              base.num = list[i].num||'';
-              const f=(list[i].first||'').trim(); const l=(list[i].last||'').trim(); const nick=(list[i].nick||'').trim();
-              if(f||l){ base.first=f; base.last=l; } else if(nick){ base.first=nick; base.last=''; }
-            }
-            return base;
-          });
-        }
-        // Meta opcional
-        const metaRow = nrows.find(r=> norm(r['type'])==='meta');
-        if(metaRow){
-          if(metaRow['teamname']) state.teams[ti].name = metaRow['teamname'];
-          if(metaRow['coach']) state.teams[ti].coach = metaRow['coach'];
-          if(metaRow['logo']) state.teams[ti].logo = metaRow['logo'];
-        }
-        if((!metaRow || !metaRow['teamname']) && opts.filename){
-          const base = String(opts.filename).replace(/\.[^.]+$/,'');
-          if(/^Equipo\s*\d+$/i.test(state.teams[ti].name||'')) state.teams[ti].name = base;
-        }
-      }
-
-      // ---------- Util ---------
-      function n(v){ return (v==null||v==='')? '': String(v); }
-      function esc(s){ return String(s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
-      function sanitizeName(s){ return (s||'').replace(/[^\w\-\s]+/g,'').trim().replace(/\s+/g,'_'); }
-
-      // ---------- Auto-guardado (solo SW + localStorage) ----------
-      function csvFromState(){
-        const lines=[];
-        const headers=['team','coach','num','first','last','2PA','2PM','3PA','3PM','FTA','FTM','FGA','FGM','OREB','DREB','REB','AST','STL','TOV','BLK_F','BLK_A','PF','FD','PTS','VAL'];
-        lines.push(headers.join(';'));
-        state.teams.forEach(team=> team.players.forEach(pl=>{
-          const row=[team.name,team.coach||'',pl.num||'',pl.first||'',pl.last||'',pl._2PA||0,pl._2PM||0,pl._3PA||0,pl._3PM||0,pl.FTA||0,pl.FTM||0,pl.FGA||0,pl.FGM||0,pl.OREB||0,pl.DREB||0,pl.REB||0,pl.AST||0,pl.STL||0,pl.TOV||0,pl.BLK_F||0,pl.BLK_A||0,pl.PF||0,pl.FD||0,pl.PTS||0,pl.VAL||0];
-          lines.push(row.join(';'));
-        }));
-        return lines.join('\\n');
-      }
-      function saveLocal(csv){ try{ localStorage.setItem('autosave_'+sanitizeName(app.matchName||'partido'), csv); return true; }catch(e){ return false; } }
-      async function autosaveNow(){
-        updateTitleFromTeams();
-        const csv = csvFromState();
-        const payload = { json: exportJson(), csv, title: app.matchName };
-        try { await fetch('/api/live', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(payload)}); } catch (e) {}
-        saveLocal(csv);
-        const badge = document.getElementById('autosaveBadge');
-        if(badge){ const t=new Date(); badge.textContent = `Autoguardado ✓ ${t.toLocaleTimeString()}`; badge.classList.add('ok'); }
-      }
-      function scheduleAutoSave(){ clearTimeout(app.saveTimer); app.saveTimer = setTimeout(autosaveNow, 250); }
-
-      // ---------- Inicio ----------
-      document.addEventListener('DOMContentLoaded', async ()=>{ await loadIndex(); render(); applyLock(); updateTitleFromTeams(); });
+  tick();
 </script>
 </body>
 </html>
