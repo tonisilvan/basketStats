@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Estadísticas equipos — Totales</title>
+    <style>
+        :root{ --bg:transparent; --ink:#e8eef9; --muted:#9bb0c9; --a:#6bd3ff; --b:#ffba5c; --radius:24px; }
+        *{box-sizing:border-box} html,body{height:100%}
+        body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
+        .screen{min-height:100vh;display:grid;place-items:center;padding:2.5vw}
+        .frame{width:min(1800px,96vw);border-radius:var(--radius);padding:2.2vw 2.4vw;background:rgba(18,24,33,.82);
+               backdrop-filter:blur(6px);box-shadow:0 40px 100px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.06)}
+        .title{text-align:center;font-weight:900;letter-spacing:.6px;font-size:clamp(22px,2.6vw,40px);margin-bottom:1.2vw;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+        .grid{display:grid;grid-template-columns:1fr clamp(90px,8vw,130px) 1fr;gap:2vw;align-items:center}
+        .vs{width:clamp(90px,8vw,130px);height:clamp(90px,8vw,130px);border-radius:999px;display:grid;place-items:center;font-weight:900;color:#cfe2ff;
+            background:radial-gradient(60% 60% at 50% 40%, #1d2a3c, #0d1520);box-shadow:0 0 0 2px #26364d,0 0 28px rgba(90,140,255,.35);
+            font-size:clamp(24px,2.8vw,40px);letter-spacing:1px}
+        .col{display:flex;flex-direction:column;align-items:center;gap:1.2vw}
+        .head{display:flex;flex-direction:column;align-items:center;gap:.3vw}
+        .name{font-weight:900;line-height:1.05;text-align:center;font-size:clamp(24px,3.2vw,48px)}
+        .val{display:inline-block;margin-top:.2vw;font-size:clamp(12px,1.1vw,16px);font-weight:900;padding:.3vw .8vw;border-radius:999px}
+        .a .val{color:#cfefff;background:rgba(107,211,255,.12);border:1px solid rgba(107,211,255,.35)}
+        .b .val{color:#ffe7c4;background:rgba(255,186,92,.12);border:1px solid rgba(255,186,92,.35)}
+        .stack{width:100%;max-width:min(560px,46vw);display:flex;flex-direction:column;gap:.8vw}
+        .pill{background:#0f1724;border:1px solid #2a3a4d;border-radius:16px;padding:1vw 1.2vw;min-height:clamp(64px,6.4vw,88px);
+              display:flex;align-items:center;justify-content:space-between;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+        .a .pill{box-shadow:inset 0 0 0 1px rgba(107,211,255,.12)}
+        .b .pill{box-shadow:inset 0 0 0 1px rgba(255,186,92,.12)}
+        .k{font-size:clamp(12px,1.2vw,18px);color:var(--muted);letter-spacing:.3px}
+        .v{font-size:clamp(28px,4.8vw,76px);font-weight:1000;line-height:1}
+        .sub{font-size:clamp(11px,1.1vw,16px);color:#b6c7de;margin-left:1vw}
+        @media (max-width:1000px){ .grid{grid-template-columns:1fr;gap:2vw} .vs{margin:0 auto} }
+    </style>
+</head>
+<body>
+<div class="screen">
+    <div class="frame">
+        <div class="title">ESTADÍSTICAS EQUIPOS — TOTALES</div>
+        <div class="grid">
+            <section id="left"  class="col a"></section>
+            <div class="vs">VS</div>
+            <section id="right" class="col b"></section>
+        </div>
+    </div>
+</div>
+
+<script>
+    const pct=(m,a)=>a>0?(100*m/a).toFixed(1)+'%':'—';
+    const ma=(m,a)=>`${m}/${a}`;
+    const miss=(m,a)=> (a>=(m||0)) ? (a-(m||0)) : 0;
+
+    function totals(team){
+      const t = {PTS:0, OREB:0,DREB:0, AST:0,STL:0,TOV:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0};
+      (team.players||[]).forEach(p=>{
+        t.PTS+=(p.PTS||0);
+        t.OREB+=(p.OREB||0); t.DREB+=(p.DREB||0);
+        t.AST+=(p.AST||0); t.STL+=(p.STL||0); t.TOV+=(p.TOV||0);
+        t._2PM+=(p._2PM||0); t._2PA+=(p._2PA||0);
+        t._3PM+=(p._3PM||0); t._3PA+=(p._3PA||0);
+      });
+      t.REB=t.OREB+t.DREB;
+      return t;
+    }
+
+    function teamColumn(el, team, side){
+      const t = totals(team);
+      el.className='col '+side;
+      el.innerHTML = `
+        <div class="head">
+          <div class="name">${team.name||('Equipo '+(side==='a'?1:2))}</div>
+          <div class="val">TOTAL</div>
+        </div>
+        <div class="stack">
+          <div class="pill"><span class="k">PTS</span><span class="v">${t.PTS}</span></div>
+          <div class="pill"><span class="k">REB</span><span class="v">${t
