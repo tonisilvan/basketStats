@@ -46,17 +46,18 @@
 </div>
 
 <script>
-    const N = v => (v==null || v==='') ? 0 : Number(v);         // <-- fuerza número
-    const pct = (m,a)=> a>0 ? (100*N(m)/N(a)).toFixed(1)+'%' : '—';
-    const ma  = (m,a)=> `${N(m)}/${N(a)}`;
-    const miss= (m,a)=> Math.max(0, N(a)-N(m));
+    const N = v => (v==null || v==='') ? 0 : Number(v);
+    const pct  = (m,a)=> a>0 ? (100*N(m)/N(a)).toFixed(1)+'%' : '—';
+    const ma   = (m,a)=> `${N(m)}/${N(a)}`;
+    const miss = (m,a)=> Math.max(0, N(a)-N(m));
 
     function totals(team){
-      const t = {PTS:0, OREB:0,DREB:0, AST:0,STL:0,TOV:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0};
+      const t = {PTS:0, OREB:0,DREB:0, AST:0,STL:0,TOV:0, PF:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0};
       (team?.players||[]).forEach(p=>{
         t.PTS += N(p.PTS);
         t.OREB+= N(p.OREB); t.DREB+= N(p.DREB);
         t.AST += N(p.AST);  t.STL += N(p.STL); t.TOV += N(p.TOV);
+        t.PF  += N(p.PF);
         t._2PM+= N(p._2PM); t._2PA+= N(p._2PA);
         t._3PM+= N(p._3PM); t._3PA+= N(p._3PA);
       });
@@ -73,10 +74,7 @@
           <div class="val">TOTAL</div>
         </div>
         <div class="stack">
-          <div class="pill"><span class="k">PTS</span><span class="v">${t.PTS}</span></div>
-          <div class="pill"><span class="k">REB</span><span class="v">${t.REB}</span></div>
-          <div class="pill"><span class="k">AST</span><span class="v">${t.AST}</span></div>
-          <div class="pill"><span class="k">ROB</span><span class="v">${t.STL}</span></div>
+          <!-- Primero porcentajes -->
           <div class="pill">
             <span class="k">% T2</span>
             <span class="v">${pct(t._2PM,t._2PA)}</span>
@@ -87,6 +85,21 @@
             <span class="v">${pct(t._3PM,t._3PA)}</span>
             <span class="sub">${ma(t._3PM,t._3PA)} · fallados ${miss(t._3PM,t._3PA)}</span>
           </div>
+
+          <!-- Luego rebotes (con OF/DEF), asistencias y robos -->
+          <div class="pill">
+            <span class="k">REB</span>
+            <span class="v">${t.REB}</span>
+            <span class="sub">OF ${t.OREB} · DEF ${t.DREB}</span>
+          </div>
+          <div class="pill"><span class="k">AST</span><span class="v">${t.AST}</span></div>
+          <div class="pill"><span class="k">ROB</span><span class="v">${t.STL}</span></div>
+
+          <!-- Faltas cometidas -->
+          <div class="pill"><span class="k">PF</span><span class="v">${t.PF}</span></div>
+
+          <!-- Puntos (lo dejo al final) -->
+          <div class="pill"><span class="k">PTS</span><span class="v">${t.PTS}</span></div>
         </div>`;
     }
 
