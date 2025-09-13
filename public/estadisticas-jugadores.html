@@ -1,75 +1,94 @@
 <!doctype html>
 <html lang="es">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Estadísticas jugadores</title>
     <style>
         :root{
-          --bg: transparent;  /* usa #0b0f14 si no es overlay */
+          --bg: transparent;                 /* usa #0b0f14 si no es overlay */
           --ink:#e8eef9; --muted:#9bb0c9;
-          --a:#6bd3ff;  /* color lado A */
-          --b:#ffba5c;  /* color lado B */
-          --radius:22px;
+          --a:#6bd3ff;                       /* lado A */
+          --b:#ffba5c;                       /* lado B */
+          --radius:24px;
         }
         *{box-sizing:border-box}
         html,body{height:100%}
-        body{margin:0;background:var(--bg);color:var(--ink);
-             font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
-        .screen{min-height:100vh;display:grid;place-items:center;padding:24px}
-        .frame{
-          width:min(1800px,96vw); border-radius:var(--radius); padding:28px;
-          background:rgba(18,24,33,.78); backdrop-filter: blur(6px);
-          box-shadow:0 30px 80px rgba(0,0,0,.40), inset 0 0 0 2px rgba(255,255,255,.06);
+        body{
+          margin:0; background:var(--bg); color:var(--ink);
+          font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial;
         }
-        .title{ text-align:center; font-weight:900; letter-spacing:.6px;
-                font-size:clamp(18px,2.4vw,28px); margin-bottom:18px;
-                text-shadow:0 2px 12px rgba(0,0,0,.45);}
+        .screen{min-height:100vh; display:grid; place-items:center; padding:2.5vw}
+        .frame{
+          width:min(1800px,96vw);
+          border-radius:var(--radius);
+          padding:2.2vw 2.4vw;
+          background:rgba(18,24,33,.82);
+          backdrop-filter: blur(6px);
+          box-shadow:0 40px 100px rgba(0,0,0,.45), inset 0 0 0 2px rgba(255,255,255,.06);
+        }
+        .title{
+          text-align:center; font-weight:900; letter-spacing:.6px;
+          font-size:clamp(22px,2.6vw,40px); margin-bottom:1.2vw;
+          text-shadow:0 2px 12px rgba(0,0,0,.45);
+        }
         .grid{
-          display:grid; grid-template-columns:1fr clamp(90px,10vw,120px) 1fr;
-          gap:24px; align-items:center;
+          display:grid; grid-template-columns:1fr clamp(90px,8vw,130px) 1fr;
+          gap:2vw; align-items:center;
         }
         .vs{
-          width:clamp(90px,10vw,120px); height:clamp(90px,10vw,120px); border-radius:999px;
+          width:clamp(90px,8vw,130px); height:clamp(90px,8vw,130px); border-radius:999px;
           display:grid; place-items:center; font-weight:900; color:#cfe2ff;
           background:radial-gradient(60% 60% at 50% 40%, #1d2a3c, #0d1520);
           box-shadow:0 0 0 2px #26364d, 0 0 28px rgba(90,140,255,.35);
-          font-size:clamp(24px,2.4vw,30px); letter-spacing:1px;
+          font-size:clamp(24px,2.8vw,40px); letter-spacing:1px;
         }
-        .col{display:grid; grid-template-columns:140px 1fr; gap:20px; align-items:start}
-        .figure{
-          width:44px;height:44px;opacity:.9
+
+        /* Columna de jugador */
+        .col{
+          display:flex; flex-direction:column; align-items:center; gap:1.2vw;
+          position:relative;
         }
-        .fig-left{position:absolute;left:-56px;top:-2px}
-        .fig-right{position:absolute;right:-56px;top:-2px; transform:scaleX(-1)}
         .logo{
-          width:140px;height:140px;border-radius:18px;overflow:hidden;position:relative;
-          display:grid;place-items:center;background:#0e1620;border:2px solid #2a3a4d;
+          width:clamp(120px,14vw,220px); height:clamp(120px,14vw,220px);
+          border-radius:18px; overflow:hidden; display:grid; place-items:center;
+          background:#0e1620; border:2px solid #2a3a4d;
           box-shadow:0 10px 30px rgba(0,0,0,.35)
         }
-        .logo img{width:100%;height:100%;object-fit:cover}
-        .head{display:flex;flex-direction:column;gap:8px}
-        .name{font-weight:900;line-height:1.05;font-size:clamp(22px,2.4vw,30px)}
-        .team{font-size:clamp(12px,1.2vw,14px);color:var(--muted)}
-        .val{display:inline-block;margin-left:10px;font-size:12px;font-weight:900;
-             padding:5px 10px;border-radius:999px}
+        .logo img{width:100%; height:100%; object-fit:cover}
+        .figure{
+          position:absolute; top:-10px; width:clamp(44px,4.4vw,68px); height:auto; opacity:.95;
+          filter: drop-shadow(0 8px 16px rgba(0,0,0,.35));
+        }
+        .fig-left{left:-3.4vw}
+        .fig-right{right:-3.4vw; transform:scaleX(-1)}
+        .head{display:flex; flex-direction:column; align-items:center; gap:.3vw}
+        .name{font-weight:900; line-height:1.05; text-align:center; font-size:clamp(24px,3.2vw,48px)}
+        .team{font-size:clamp(12px,1.2vw,18px); color:var(--muted)}
+        .val{
+          display:inline-block; margin-top:.2vw; font-size:clamp(12px,1.1vw,16px); font-weight:900;
+          padding:.3vw .8vw; border-radius:999px
+        }
         .a .val{color:#cfefff;background:rgba(107,211,255,.12);border:1px solid rgba(107,211,255,.35)}
         .b .val{color:#ffe7c4;background:rgba(255,186,92,.12); border:1px solid rgba(255,186,92,.35)}
-        .stack{margin-top:6px;display:flex;flex-direction:column;gap:10px;max-width:520px}
+
+        /* Píldoras en columna */
+        .stack{width:100%; max-width:min(560px,46vw); display:flex; flex-direction:column; gap:.8vw}
         .pill{
-          background:#0f1724;border:1px solid #2a3a4d;border-radius:14px;padding:12px 14px;
-          display:flex;align-items:center;justify-content:space-between;min-height:64px;
+          background:#0f1724; border:1px solid #2a3a4d; border-radius:16px;
+          padding:1vw 1.2vw; min-height:clamp(64px,6.4vw,88px);
+          display:flex; align-items:center; justify-content:space-between;
           box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)
         }
         .a .pill{box-shadow:inset 0 0 0 1px rgba(107,211,255,.12)}
         .b .pill{box-shadow:inset 0 0 0 1px rgba(255,186,92,.12)}
-        .k{font-size:12px;color:var(--muted);letter-spacing:.3px}
-        .v{font-size:clamp(20px,2.2vw,28px);font-weight:900;margin-left:auto}
-        .sub{font-size:12px;color:#b6c7de;margin-left:10px}
+        .k{font-size:clamp(12px,1.2vw,18px); color:var(--muted); letter-spacing:.3px}
+        .v{font-size:clamp(28px,4.8vw,76px); font-weight:1000; line-height:1}
+        .sub{font-size:clamp(11px,1.1vw,16px); color:#b6c7de; margin-left:1vw}
+
         @media (max-width:1000px){
-          .grid{grid-template-columns:1fr;gap:18px}
-          .col{grid-template-columns:120px 1fr}
-          .logo{width:120px;height:120px}
+          .grid{grid-template-columns:1fr; gap:2vw}
+          .fig-left{left:-2.4vw} .fig-right{right:-2.4vw}
           .vs{margin:0 auto}
         }
     </style>
@@ -87,100 +106,114 @@
 </div>
 
 <script>
-    // Helpers de formato
+    /* ===================== UTILIDADES ===================== */
     const pct  = (m,a)=> a>0 ? (100*m/a).toFixed(1)+'%' : '—';
     const ma   = (m,a)=> `${m}/${a}`;
-    const name = p => [p.first||'', p.last||''].join(' ').trim() || ('#'+(p.num||''));
+    const full = p => [p.first||'', p.last||''].join(' ').trim() || ('#'+(p.num||''));
 
-    // Cache de logos por nombre de equipo
+    // Normaliza rutas de logo desde la plantilla:
+    //  - "../imagenes/x.png"   -> "/imagenes/x.png"
+    //  - "./x.png"             -> "/plantillas/x.png"
+    //  - "imagenes/x.png"      -> "/plantillas/imagenes/x.png"
+    //  - "/imagenes/x.png"     -> "/imagenes/x.png" (se respeta)
+    //  - http(s)/data:         -> tal cual
+    function resolveLogoPath(raw){
+      let p = (raw||'').trim();
+      if(!p) return '';
+      if(/^https?:|^data:/.test(p)) return p;
+      // quitar todos los "../" iniciales -> volver relativo a raíz
+      if(/^(\.\.\/)+/.test(p)) return '/' + p.replace(/^(\.\.\/)+/, '');
+      if(/^\.\//.test(p)) return '/plantillas/' + p.replace(/^\.\//,'');
+      if(p.startsWith('/')) return p;
+      return '/plantillas/' + p;
+    }
+
+    // Cache (por nombre de equipo) de logos
     const logoCache = new Map();
 
-    // Lee el META.logo desde /plantillas/<equipo>.csv (o variantes) y devuelve URL absoluta
+    // Lee el META.logo desde /plantillas/<equipo>.csv (o variantes) y lo normaliza
     async function logoFromPlantilla(teamName){
-      if (!teamName) return '';
-      if (logoCache.has(teamName)) return logoCache.get(teamName);
+      if(!teamName) return '';
+      if(logoCache.has(teamName)) return logoCache.get(teamName);
 
       const variants = (base)=>{
-        const n1 = base;
-        const n2 = base.replace(/\s+/g,'_');
-        const n3 = base.replace(/\s+/g,'%20');
+        const gap   = base;
+        const under = base.replace(/\s+/g,'_');
+        const enc   = encodeURIComponent(base);
         return [
-          `/plantillas/${n1}.csv`,
-          `/plantillas/${n2}.csv`,
-          `/plantillas/${n3}.csv`
+          `/plantillas/${gap}.csv`,
+          `/plantillas/${under}.csv`,
+          `/plantillas/${enc}.csv`
         ];
       };
 
-      async function tryFetch(url){
+      async function readLogo(url){
         try{
           const r = await fetch(url, {cache:'no-store'});
           if(!r.ok) return null;
           const text = await r.text();
-          const sep = text.includes(';') ? ';' : ',';
+          const sep = text.includes(';')?';':',';
           const lines = text.split(/\r?\n/).filter(Boolean);
           if(!lines.length) return null;
           const headers = lines[0].split(sep).map(h=>h.trim().toLowerCase());
           for(let i=1;i<lines.length;i++){
             const cells = lines[i].split(sep).map(c=>c.trim());
             const row = Object.fromEntries(headers.map((h,idx)=>[h, cells[idx]||'']));
-            const type = (row.type||'').toLowerCase();
-            if(type==='meta' && row.logo){
-              let lg = row.logo.trim();
-              if (!/^https?:|^data:|^\//.test(lg)) lg = '/plantillas/'+lg.replace(/^\.?\//,'');
-              return lg;
+            if((row.type||'').toLowerCase()==='meta' && row.logo){
+              return resolveLogoPath(row.logo);
             }
           }
         }catch(_){ return null; }
         return null;
       }
 
-      const tries = variants(teamName);
-      for(const url of tries){
-        const hit = await tryFetch(url);
+      for(const u of variants(teamName)){
+        const hit = await readLogo(u);
         if(hit){ logoCache.set(teamName, hit); return hit; }
       }
-      logoCache.set(teamName, ''); // not found
+      logoCache.set(teamName, '');
       return '';
     }
 
-    // Render de una columna
-    function renderSide(root, pl, team, sideClass, logoUrl){
-      root.className = 'col ' + sideClass;
-      root.innerHTML = `
+    function topTwoByVal(data){
+      const arr=[];
+      (data.teams||[]).forEach(t => (t.players||[]).forEach(pl => arr.push({pl, team:t})));
+      arr.sort((a,b)=> (b.pl.VAL||0) - (a.pl.VAL||0));
+      return [arr[0], arr[1]].filter(Boolean);
+    }
+
+    function playerColumn(el, pl, team, side, logoUrl){
+      el.className = 'col ' + side;
+      el.innerHTML = `
         <div class="logo">
-          <svg class="figure ${sideClass==='a'?'fig-left':'fig-right'}" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="5" r="3" fill="${sideClass==='a'?'var(--a)':'var(--b)'}"/>
+          <svg class="figure ${side==='a'?'fig-left':'fig-right'}" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="5" r="3" fill="${side==='a'?'var(--a)':'var(--b)'}"/>
             <path d="M12 8c-3 0-5 2.5-5 5.5V22h2v-5h6v5h2v-8.5C17 10.5 15 8 12 8Z" fill="currentColor" opacity=".35"/>
           </svg>
           <img alt="logo ${team?.name||''}">
         </div>
         <div class="head">
-          <div class="name">${name(pl)} <span class="val">VAL ${pl.VAL??0}</span></div>
-          <div class="team">${team?.name||''}</div>
-          <div class="stack">
-            <div class="pill"><span class="k">PTS</span><span class="v">${pl.PTS||0}</span></div>
-            <div class="pill"><span class="k">REB</span><span class="v">${(pl.OREB||0)+(pl.DREB||0)}</span></div>
-            <div class="pill"><span class="k">AST</span><span class="v">${pl.AST||0}</span></div>
-            <div class="pill"><span class="k">ROB</span><span class="v">${pl.STL||0}</span></div>
-            <div class="pill"><span class="k">% T2</span>
-              <span class="v">${pct(pl._2PM||0,pl._2PA||0)}</span>
-              <span class="sub">${ma(pl._2PM||0,pl._2PA||0)}</span>
-            </div>
-            <div class="pill"><span class="k">% T3</span>
-              <span class="v">${pct(pl._3PM||0,pl._3PA||0)}</span>
-              <span class="sub">${ma(pl._3PM||0,pl._3PA||0)}</span>
-            </div>
+          <div class="name">${full(pl)}</div>
+          <div class="team">${team?.name||''} <span class="val">VAL ${pl.VAL??0}</span></div>
+        </div>
+        <div class="stack">
+          <div class="pill"><span class="k">PTS</span><span class="v">${pl.PTS||0}</span></div>
+          <div class="pill"><span class="k">REB</span><span class="v">${(pl.OREB||0)+(pl.DREB||0)}</span></div>
+          <div class="pill"><span class="k">AST</span><span class="v">${pl.AST||0}</span></div>
+          <div class="pill"><span class="k">ROB</span><span class="v">${pl.STL||0}</span></div>
+          <div class="pill">
+            <span class="k">% T2</span>
+            <span class="v">${pct(pl._2PM||0, pl._2PA||0)}</span>
+            <span class="sub">${ma(pl._2PM||0, pl._2PA||0)}</span>
+          </div>
+          <div class="pill">
+            <span class="k">% T3</span>
+            <span class="v">${pct(pl._3PM||0, pl._3PA||0)}</span>
+            <span class="sub">${ma(pl._3PM||0, pl._3PA||0)}</span>
           </div>
         </div>`;
-      const img = root.querySelector('img');
+      const img = el.querySelector('img');
       img.src = logoUrl || '';
-    }
-
-    function topTwoByVal(data){
-      const arr=[];
-      (data.teams||[]).forEach((t)=> (t.players||[]).forEach(pl=> arr.push({pl, team:t})));
-      arr.sort((a,b)=> (b.pl.VAL||0) - (a.pl.VAL||0));
-      return [arr[0], arr[1]].filter(Boolean);
     }
 
     async function tick(){
@@ -192,15 +225,16 @@
           const L = document.getElementById('left');
           const R = document.getElementById('right');
 
-          let logoA = (A?.team?.logo)||'';
-          let logoB = (B?.team?.logo)||'';
+          // logo desde JSON (normalizando) o desde la plantilla
+          let logoA = resolveLogoPath(A?.team?.logo||'');
+          let logoB = resolveLogoPath(B?.team?.logo||'');
           if(!logoA && A) logoA = await logoFromPlantilla(A.team?.name||'');
           if(!logoB && B) logoB = await logoFromPlantilla(B.team?.name||'');
 
-          if (A) renderSide(L, A.pl, A.team, 'a', logoA);
-          if (B) renderSide(R, B.pl, B.team, 'b', logoB);
+          if(A) playerColumn(L, A.pl, A.team, 'a', logoA);
+          if(B) playerColumn(R, B.pl, B.team, 'b', logoB);
         }
-      }catch(e){ /* silent */ }
+      }catch(_){}
       setTimeout(tick, 600);
     }
     tick();
