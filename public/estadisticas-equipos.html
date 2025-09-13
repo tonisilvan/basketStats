@@ -46,31 +46,64 @@
 </div>
 
 <script>
-    const pct=(m,a)=>a>0?(100*m/a).toFixed(1)+'%':'—';
-    const ma=(m,a)=>`${m}/${a}`;
-    const miss=(m,a)=> (a>=(m||0)) ? (a-(m||0)) : 0;
+    const N = v => (v==null || v==='') ? 0 : Number(v);         // <-- fuerza número
+    const pct = (m,a)=> a>0 ? (100*N(m)/N(a)).toFixed(1)+'%' : '—';
+    const ma  = (m,a)=> `${N(m)}/${N(a)}`;
+    const miss= (m,a)=> Math.max(0, N(a)-N(m));
 
     function totals(team){
       const t = {PTS:0, OREB:0,DREB:0, AST:0,STL:0,TOV:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0};
-      (team.players||[]).forEach(p=>{
-        t.PTS+=(p.PTS||0);
-        t.OREB+=(p.OREB||0); t.DREB+=(p.DREB||0);
-        t.AST+=(p.AST||0); t.STL+=(p.STL||0); t.TOV+=(p.TOV||0);
-        t._2PM+=(p._2PM||0); t._2PA+=(p._2PA||0);
-        t._3PM+=(p._3PM||0); t._3PA+=(p._3PA||0);
+      (team?.players||[]).forEach(p=>{
+        t.PTS += N(p.PTS);
+        t.OREB+= N(p.OREB); t.DREB+= N(p.DREB);
+        t.AST += N(p.AST);  t.STL += N(p.STL); t.TOV += N(p.TOV);
+        t._2PM+= N(p._2PM); t._2PA+= N(p._2PA);
+        t._3PM+= N(p._3PM); t._3PA+= N(p._3PA);
       });
-      t.REB=t.OREB+t.DREB;
+      t.REB = t.OREB + t.DREB;
       return t;
     }
 
     function teamColumn(el, team, side){
-      const t = totals(team);
+      const t = totals(team||{players:[]});
       el.className='col '+side;
       el.innerHTML = `
         <div class="head">
-          <div class="name">${team.name||('Equipo '+(side==='a'?1:2))}</div>
+          <div class="name">${team?.name || ('Equipo '+(side==='a'?1:2))}</div>
           <div class="val">TOTAL</div>
         </div>
         <div class="stack">
           <div class="pill"><span class="k">PTS</span><span class="v">${t.PTS}</span></div>
-          <div class="pill"><span class="k">REB</span><span class="v">${t
+          <div class="pill"><span class="k">REB</span><span class="v">${t.REB}</span></div>
+          <div class="pill"><span class="k">AST</span><span class="v">${t.AST}</span></div>
+          <div class="pill"><span class="k">ROB</span><span class="v">${t.STL}</span></div>
+          <div class="pill">
+            <span class="k">% T2</span>
+            <span class="v">${pct(t._2PM,t._2PA)}</span>
+            <span class="sub">${ma(t._2PM,t._2PA)} · fallados ${miss(t._2PM,t._2PA)}</span>
+          </div>
+          <div class="pill">
+            <span class="k">% T3</span>
+            <span class="v">${pct(t._3PM,t._3PA)}</span>
+            <span class="sub">${ma(t._3PM,t._3PA)} · fallados ${miss(t._3PM,t._3PA)}</span>
+          </div>
+        </div>`;
+    }
+
+    async function tick(){
+      try{
+        const r = await fetch('/api/live', {cache:'no-store'});
+        if(r.ok){
+          const data = await r.json();
+          const teams = data?.teams || [];
+          const L = document.getElementById('left'), R = document.getElementById('right');
+          teamColumn(L, teams[0], 'a');
+          teamColumn(R, teams[1], 'b');
+        }
+      }catch(e){ /* silenciar */ }
+      setTimeout(tick, 600);
+    }
+    tick();
+</script>
+</body>
+</html>
