@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Estadísticas totales</title>
+    <style>
+        :root{
+          --bg:transparent; --ink:#e8eef9; --muted:#9bb0c9;
+          --panel:#0f1620; --head:#141e2b; --line:#253445;
+          --a:#6bd3ff; --b:#ffba5c;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,Segoe UI,Roboto,Ubuntu,Arial}
+        .wrap{min-height:100vh;padding:20px;display:flex;flex-direction:column;gap:18px}
+        .title{font-weight:900;text-align:center;letter-spacing:.6px;font-size:clamp(20px,2.2vw,36px)}
+        .board{background:rgba(18,24,33,.88);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+        .teambar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--head);border-bottom:1px solid var(--line)}
+        .teamname{font-weight:900;font-size:clamp(16px,1.8vw,28px)}
+        .score{font-weight:900;font-size:clamp(16px,1.8vw,28px)}
+        .score.a{color:var(--a)} .score.b{color:var(--b)}
+        .scroll{overflow:auto;max-height:72vh}
+        table{width:100%;border-collapse:separate;border-spacing:0}
+        thead th{position:sticky;top:0;background:var(--head);z-index:2}
+        th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;font-variant-numeric:tabular-nums}
+        tbody tr:nth-child(2n){background:#0f141d}
+        th.left,td.left{text-align:left}
+        th.sticky,td.sticky{position:sticky;left:0;background:inherit;z-index:1}
+        .num{width:48px}
+        .player{min-width:210px}
+        .sumrow{font-weight:900;background:#101a25}
+        .pctrow td{font-size:.95em;color:var(--muted)}
+        .chip{display:inline-block;border:1px solid #2a3a4d;border-radius:999px;padding:.15em .5em;font-size:.8em;margin-left:.5em}
+        @media print{ .wrap{padding:0} .board{border:0} body{background:white;color:black} }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <div class="title">ESTADÍSTICAS TOTALES</div>
+
+    <section id="teamA" class="board">
+        <div class="teambar"><div class="teamname" id="nameA">Equipo A</div><div class="score a" id="scoreA">0</div></div>
+        <div class="scroll">
+            <table id="tableA"></table>
+        </div>
+    </section>
+
+    <section id="teamB" class="board">
+        <div class="teambar"><div class="teamname" id="nameB">Equipo B</div><div class="score b" id="scoreB">0</div></div>
+        <div class="scroll">
+            <table id="tableB"></table>
+        </div>
+    </section>
+</div>
+
+<script>
+    // ---------- helpers ----------
+    const N = v => (v==null||v==='')?0:Number(v);
+    const pct=(m,a)=> a>0 ? (100*N(m)/N(a)).toFixed(1)+'%' : '—';
+    const full = p => [p.first||'',p.last||''].join(' ').trim() || ('#'+(p.num||''));
+    const mA = (m,a)=> `${N(m)}/${N(a)}`;
+
+    function computeTotals(team){
+      const t = {
+        PTS:0, _2PM:0,_2PA:0, _3PM:0,_3PA:0, FTM:0,FTA:0,
+        OREB:0,DREB:0, REB:0, AST:0, STL:0, TOV:0, BLK_F:0, BLK_A:0, PF:0, FD:0, VAL:0
+      };
+      (team.players||[]).forEach(p=>{
+        t.PTS   += N(p.PTS);
+        t._2PM  += N(p._2PM);  t._2PA += N(p._2PA);
+        t._3PM  += N(p._3PM);  t._3PA += N(p._3PA);
+        t.FTM   += N(p.FTM);   t.FTA  += N(p.FTA);
+        t.OREB  += N(p.OREB);  t.DREB += N(p.DREB);
+        t.AST   += N(p.AST);   t.STL  += N(p.STL); t.TOV += N(p.TOV);
+        t.BLK_F += N(p.BLK_F); t.BLK_A+= N(p.BLK_A);
+        t.PF    += N(p.PF);    t.FD   += N(p.FD);
+        t.VAL   += N(p.VAL);
+      });
+      t.REB = t.OREB + t.DREB;
+      return t;
+    }
+
+    // ---------- table render ----------
+    const HEADERS = [
+      {k:'num',   label:'#', class:'num sticky'},
+      {k:'name',  label:'Jugador', class:'player left sticky'},
+      {k:'PTS',   label:'PTS'},
+      {k:'T2',    label:'T2 M/A'},
+      {k:'T3',    label:'T3 M/A'},
+      {k:'TL',    label:'TL M/A'},
+      {k:'OREB',  label:'REB OF'},
+      {k:'DREB',  label:'REB DEF'},
+      {k:'REB',   label:'REB TOT'},
+      {k:'AST',   label:'AST'},
+      {k:'STL',   label:'ROB'},
+      {k:'TOV',   label:'PER'},
+      {k:'BLK_F', label:'TAP F'},
+      {k:'BLK_A', label:'TAP C'},
+      {k:'PF',    label:'PF'},
+      {k:'FD',    label:'FR'},
+      {k:'VAL',   label:'VAL'}
+    ];
+
+    function thead(){
+      return `<thead><tr>${
+        HEADERS.map(h=>`<th class="${h.class||''}">${h.label}</th>`).join('')
+      }</tr></thead>`;
+    }
+
+    function rowPlayer(p){
+      return `<tr>
+        <td class="sticky">${p.num||''}</td>
+        <td class="left sticky">${full(p)}</td>
+        <td>${N(p.PTS)}</td>
+        <td>${mA(p._2PM,p._2PA)}</td>
+        <td>${mA(p._3PM,p._3PA)}</td>
+        <td>${mA(p.FTM,p.FTA)}</td>
+        <td>${N(p.OREB)}</td>
+        <td>${N(p.DREB)}</td>
+        <td>${N((p.OREB||0)+(p.DREB||0))}</td>
+        <td>${N(p.AST)}</td>
+        <td>${N(p.STL)}</td>
+        <td>${N(p.TOV)}</td>
+        <td>${N(p.BLK_F)}</td>
+        <td>${N(p.BLK_A)}</td>
+        <td>${N(p.PF)}</td>
+        <td>${N(p.FD)}</td>
+        <td>${N(p.VAL)}</td>
+      </tr>`;
+    }
+
+    function rowTotals(t){
+      return `<tr class="sumrow">
+        <td class="sticky"></td>
+        <td class="left sticky">TOTAL</td>
+        <td>${t.PTS}</td>
+        <td>${mA(t._2PM,t._2PA)} <span class="chip">${pct(t._2PM,t._2PA)}</span></td>
+        <td>${mA(t._3PM,t._3PA)} <span class="chip">${pct(t._3PM,t._3PA)}</span></td>
+        <td>${mA(t.FTM,t.FTA)}   <span class="chip">${pct(t.FTM,t.FTA)}</span></td>
+        <td>${t.OREB}</td>
+        <td>${t.DREB}</td>
+        <td>${t.REB}</td>
+        <td>${t.AST}</td>
+        <td>${t.STL}</td>
+        <td>${t.TOV}</td>
+        <td>${t.BLK_F}</td>
+        <td>${t.BLK_A}</td>
+        <td>${t.PF}</td>
+        <td>${t.FD}</td>
+        <td>${t.VAL}</td>
+      </tr>`;
+    }
+
+    function rowPercentages(t){
+      return `<tr class="pctrow">
+        <td class="sticky"></td>
+        <td class="left sticky">Porcentajes</td>
+        <td></td>
+        <td>${pct(t._2PM,t._2PA)}</td>
+        <td>${pct(t._3PM,t._3PA)}</td>
+        <td>${pct(t.FTM,t.FTA)}</td>
+        <td colspan="12"></td>
+      </tr>`;
+    }
+
+    function renderTeam(tableEl, team){
+      const t = computeTotals(team);
+      const head = thead();
+      const body = `<tbody>
+        ${(team.players||[]).map(rowPlayer).join('')}
+        ${rowTotals(t)}
+        ${rowPercentages(t)}
+      </tbody>`;
+      tableEl.innerHTML = head + body;
+      return t.PTS; // para el marcador
+    }
+
+    // ---------- live loop ----------
+    async function tick(){
+      try{
+        const r = await fetch('/api/live', {cache:'no-store'});
+        if(r.ok){
+          const data = await r.json();
+          const [A,B] = data.teams||[];
+          document.getElementById('nameA').textContent = A?.name || 'Equipo 1';
+          document.getElementById('nameB').textContent = B?.name || 'Equipo 2';
+
+          const scoreA = renderTeam(document.getElementById('tableA'), A||{players:[]});
+          const scoreB = renderTeam(document.getElementById('tableB'), B||{players:[]});
+
+          document.getElementById('scoreA').textContent = scoreA;
+          document.getElementById('scoreB').textContent = scoreB;
+        }
+      }catch(e){ /* silenciar */ }
+      setTimeout(tick, 800);
+    }
+    tick();
+</script>
+</body>
+</html>
